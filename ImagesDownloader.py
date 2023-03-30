@@ -3,16 +3,11 @@ from pathlib import Path
 from io import BytesIO
 from typing import List
 from os import mkdir
-
-
-import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
 import requests
-import time
 
 
-class ImageDownload():
+class ImagesDownloader():
     def run_query(query: str) -> pd.DataFrame:
         headers = {"Content-Type": "application/json"}
         response = requests.post(
@@ -36,7 +31,6 @@ class ImageDownload():
             column_name = f'{column}.filepath'
             mkdir(save_path / column_name)
             for id, item in df.iterrows():
-                # Скачиваем и записываем только если ещё нет такого файла
                 item_name = item[name_col]
                 item_image_link = item[column]
                 bimg = requests.get(item_image_link).content
