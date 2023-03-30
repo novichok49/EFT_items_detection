@@ -1,6 +1,6 @@
 from PIL import Image
 from pathlib import Path
-from ImagesDownloader import ImagesDownload
+from ImagesDownloader import ImagesDownloader
 import matplotlib.pyplot as plt
 import pandas as pd
 from ImagesGenerator import ImagesGenerator

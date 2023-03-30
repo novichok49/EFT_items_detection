@@ -7,7 +7,7 @@ import pandas as pd
 import requests
 
 
-class ImagesDownload():
+class ImagesDownloader():
     def run_query(query: str) -> pd.DataFrame:
         headers = {"Content-Type": "application/json"}
         response = requests.post(

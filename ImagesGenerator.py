@@ -2,7 +2,9 @@ import pandas as pd
 from pathlib import Path
 from PIL import Image
 from os import makedirs
-
+import numpy as np
+from typing import List
+from GridPacker import GridPacker
 
 class ImagesGenerator:
     """The class contains functions for
@@ -12,13 +14,13 @@ class ImagesGenerator:
 
     def __init__(self,
                  images_data: pd.DataFrame,
-                 save_path: Path = Path('.')) -> None:
+                 save_path: Path = Path('./Images/')) -> None:
         """Link class to dataframe with images information, create images default folder.
 
         Args:
             images_data (pd.DataFrame): Dataframe with images information.
             save_path (Path, optional): The path to the folder where
-            the created images will be stored. Defaults to Path('.').
+            the created images will be stored. Defaults to Path('./Images/').
         """
         self.data = images_data.copy(deep=True)
         self.save_path = save_path
@@ -33,7 +35,7 @@ class ImagesGenerator:
 
         Args:
             h_grid (str): Height of images in grid units.
-            w_grid (str): Width of images in grid units
+            w_grid (str): Width of images in grid units.
             column (str): The dirrectory name for new rescaled
             images. 
             name (str): Name for new images files.
@@ -82,7 +84,11 @@ class ImagesGenerator:
             self.data.loc[i, name] = saved_filepath
             image.save(saved_filepath)
         return self.data
-    
-    # TODO
-    def construct_images(self):
+
+
+    def create_image(self,
+                     size: tuple,
+                     images: list,
+                     masks: list,
+                     bg_image=None)-> tuple:
         pass
