@@ -4,7 +4,8 @@ from PIL import Image
 from os import makedirs
 import numpy as np
 from typing import List
-from GridPacker import GridPacker
+# from GridPacker import GridPacker
+from Classes import GridPacker
 
 class ImagesGenerator:
     """The class contains functions for
