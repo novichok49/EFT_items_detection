@@ -1,8 +1,8 @@
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from PIL import Image
 
 class GridPacker:
-    def __init__(self, width: int, height: int, cell_size: int = 64):
+    def __init__(self, width: int, height: int, cell_size: int):
         self.width = width
         self.height = height
         self.cell_size = cell_size
@@ -28,12 +28,19 @@ class GridPacker:
             for col in range(x // self.cell_size, (x + w) // self.cell_size):
                 self.grid[row][col] = (x, y, w, h)
 
-    def pack(self, images: List[Image.Image]) -> Image.Image:
-        output = Image.new('RGBA', (self.width, self.height))
-        for image in images:
+    def pack(self, images: List[Tuple]) -> Tuple[Image.Image, Dict]:
+        out_image = Image.new('RGBA', (self.width, self.height))
+        bboxs = {}
+        for image, class_name in images:
             position = self.find_best_position(image.size)
             if position is not None:
                 x, y, w, h = position
-                output.paste(image, (x, y))
+                out_image.paste(image, (x, y))
+                b = 3
+                bbox = (x + b, y + b, image.size[0] - 2*b, image.size[1] - 2*b)
+                if class_name in bboxs:
+                    bboxs[class_name].append(bbox)
+                else:
+                    bboxs[class_name] = [bbox]
                 self.update_grid(x, y, w, h)
-        return output
+        return (out_image, bboxs)
