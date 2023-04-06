@@ -59,10 +59,11 @@ class ImagesGenerator:
         pass
     
     @classmethod
-    def plot_grid_on_bg(grid_image:Image.Image,
-                         bboxes:Dict,
-                         background_image:Image.Image):
-        cutted_im = ImagesGenerator._cut_empty_parts(grid_image)
+    def plot_grid_on_bg(cls,
+                        grid_image:Image.Image,
+                        bboxes:Dict,
+                        background_image:Image.Image):
+        cutted_im = ImagesGenerator.cut_empty_parts(grid_image)
         paste_x = np.random.randint(0,background_image.size[0] - cutted_im.size[0])
         paste_y = np.random.randint(0,background_image.size[1] - cutted_im.size[1])
         
@@ -77,7 +78,8 @@ class ImagesGenerator:
         return background_image, new_bboxes
     
     @classmethod
-    def cut_empty_parts(image:Image.Image):
+    def cut_empty_parts(cls,
+                        image:Image.Image):
         alpha = image.getchannel('A')
         alpha_bbox = alpha.getbbox()
         res = image.crop(alpha_bbox)
