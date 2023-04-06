@@ -1,5 +1,6 @@
 from typing import List, Tuple, Dict
 from PIL import Image
+from numpy import array 
 
 class GridPacker:
     def __init__(self, width: int, height: int, cell_size: int):
@@ -36,11 +37,12 @@ class GridPacker:
             if position is not None:
                 x, y, w, h = position
                 out_image.paste(image, (x, y))
-                b = 3
-                bbox = (x + b, y + b, image.size[0] - 2*b, image.size[1] - 2*b)
+                bbox = [x, y, image.size[0] - 1, image.size[1] - 1]
                 if class_name in bboxs:
                     bboxs[class_name].append(bbox)
                 else:
                     bboxs[class_name] = [bbox]
                 self.update_grid(x, y, w, h)
+        for bbox in bboxs:
+            bboxs[bbox] = array(bboxs[bbox])
         return (out_image, bboxs)

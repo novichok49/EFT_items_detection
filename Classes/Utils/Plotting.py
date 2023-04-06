@@ -36,6 +36,7 @@ def plot_bbox(bboxes: Dict, ax=None) -> plt.Axes:
             x,y = bbox[0], bbox[1]
             w,h = bbox[2], bbox[3]
             box = patches.Rectangle((x,y),w,h,color='r',
-                                    linestyle='-', fill=False)
+                                    linestyle='-', fill=False,
+                                    linewidth=1)
             ax.add_patch(box)
             ax.text(x,y + 15, class_name[:5], color='r')
