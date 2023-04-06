@@ -32,7 +32,7 @@ class ImagesGenerator:
         self.seed = seed
         np.random.seed(seed)
 
-    def rescale_image_by_grid(self,
+    def rescale_images_by_grid(self,
                               images_dir: str,
                               overwrite: bool=True) -> None:
         pathes = Path(self.path, images_dir).glob("*")
@@ -51,6 +51,17 @@ class ImagesGenerator:
                 filename = os.path.basename(image_path)
                 image.save(new_path / filename)
 
+
+    def rotate_images(self,
+                     images_dir: str)->None:
+        pathes = Path(self.path, images_dir).glob("*")
+        new_path = self.path / f'{images_dir}.rotated'
+        os.makedirs(new_path, exist_ok=True)
+        for image_path in pathes:
+            image = Image.open(image_path)
+            image = image.rotate(-90, expand=True)
+            filename= os.path.basename(image_path)
+            image.save(new_path / filename)
 
     def generate(self,
                  size: Tuple[int, int],
