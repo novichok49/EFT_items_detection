@@ -6,8 +6,8 @@ import requests
 
 # Columns contains link to image download
 IMG_LINK_COLUMNS = ["iconLink", "gridImageLink", "baseImageLink"]
-# QUERY to tarkov.dev API 
-QUERY="""
+# QUERY to tarkov.dev API
+QUERY = """
 {
   items {
     id
@@ -21,17 +21,22 @@ QUERY="""
 }
 """
 
+
 class ImagesDownloader():
     """
     Class for download images from tarkov.dev API.
     """
-    def __init__(self, path: str | Path='./Images') -> None:
+
+    def __init__(self, path: str | Path = './Images') -> None:
         """
         Constructor method for ImagesDownloader class.
 
-        Parameters:
-        - path: str or Path object representing the directory where images will be saved.
-          Default is './Images'.
+        Args:
+        path: str or Path object representing the directory where images will be saved.
+        Default is './Images'.
+
+        Returns:
+        None
         """
         Path(path).mkdir(parents=True, exist_ok=True)
         self.images_path = path
@@ -40,9 +45,12 @@ class ImagesDownloader():
         self._fetch_images_data()
         self._download_images()
 
-    def _fetch_images_data(self):
+    def _fetch_images_data(self) -> None:
         """
         Method to fetch images data from API tarkov.dev and store it as a Pandas DataFrame.
+
+        Returns:
+        None
         """
         headers = {"Content-Type": "application/json"}
         response = requests.post(
@@ -53,14 +61,17 @@ class ImagesDownloader():
             response = response.json()
             norm_response = pd.json_normalize(response['data']['items'])
             norm_response = norm_response.set_index("id")
-            self.images_data =  norm_response
+            self.images_data = norm_response
         else:
             raise Exception("Query failed to run by returning code of {}. {}".format(
                 response.status_code, QUERY))
-        
-    def _download_images(self):
+
+    def _download_images(self) -> None:
         """
         Method to download images and save them to disk. Skip download if file existst.
+
+        Returns:
+        None
         """
         for column in self._images_types:
             save_path = Path(self.images_path, column)
