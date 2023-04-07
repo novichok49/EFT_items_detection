@@ -1,13 +1,17 @@
 from typing import List, Tuple, Dict
 from PIL import Image
-from numpy import array 
+from numpy import array
+
+# TODO Add doc
+
 
 class GridPacker:
     def __init__(self, width: int, height: int, cell_size: int):
         self.width = width
         self.height = height
         self.cell_size = cell_size
-        self.grid = [[None for _ in range(width // cell_size)] for _ in range(height // cell_size)]
+        self.grid = [[None for _ in range(width // cell_size)]
+                     for _ in range(height // cell_size)]
 
     def find_best_position(self, size: Tuple[int, int]) -> Tuple[int, int, int, int]:
         w, h = size

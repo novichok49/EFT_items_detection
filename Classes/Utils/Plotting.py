@@ -4,7 +4,10 @@ from matplotlib import pyplot as plt
 from matplotlib import patches
 from typing import Dict, List
 
-def plot_image(image_source: Path | Image.Image | str, image_bboxs: Dict=None) -> None:
+# TODO Refactor doc
+
+
+def plot_image(image_source: Path | Image.Image | str, image_bboxs: Dict = None) -> None:
     """Plot image by path or PIL Image object.
 
     Args:
@@ -27,16 +30,17 @@ def plot_image(image_source: Path | Image.Image | str, image_bboxs: Dict=None) -
             plot_bbox(bboxes=image_bboxs, ax=ax)
         plt.show()
 
+
 def plot_bbox(bboxes: Dict, ax=None) -> plt.Axes:
     if not ax:
         fig, ax = plt.subplots(1)
         ax.imshow(Image.new('RGBA', (512, 512)))
     for class_name, list_bbox in bboxes.items():
         for bbox in list_bbox:
-            x,y = bbox[0], bbox[1]
-            w,h = bbox[2], bbox[3]
-            box = patches.Rectangle((x,y),w,h,color='r',
+            x, y = bbox[0], bbox[1]
+            w, h = bbox[2], bbox[3]
+            box = patches.Rectangle((x, y), w, h, color='r',
                                     linestyle='-', fill=False,
                                     linewidth=1)
             ax.add_patch(box)
-            ax.text(x,y + 15, class_name[:5], color='r')
+            ax.text(x, y + 15, class_name[:5], color='r')
