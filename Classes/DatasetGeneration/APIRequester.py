@@ -15,7 +15,7 @@ class APIRequester:
     def __init__(self) -> None:
         self._last_response = None
 
-    def request(self, name: str, fields: List[str]) -> Dict:
+    def request(self, name: str, fields: List[str]) -> List[Dict]:
         query = Query(name=name, fields=fields)
         query = f'{{{query.render()}}}'
         response = requests.post(

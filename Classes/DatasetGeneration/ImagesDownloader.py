@@ -1,25 +1,14 @@
 from PIL import Image
 from pathlib import Path
 from io import BytesIO
-import pandas as pd
 import requests
+from .APIRequester import APIRequester
+from typing import List
 
-# Columns contains link to image download
-IMG_LINK_COLUMNS = ["iconLink", "gridImageLink", "baseImageLink"]
-# QUERY to tarkov.dev API
-QUERY = """
-{
-  items {
-    id
-    normalizedName
-    width
-    height
-    iconLink
-    gridImageLink
-    baseImageLink
-  }
-}
-"""
+# Fields contains link to image download
+IMG_LINK_FIELDS = ["iconLink", "gridImageLink",
+                   "baseImageLink", "image8xLink",
+                   "inspectImageLink", "image512pxLink"]
 
 
 class ImagesDownloader():
@@ -27,62 +16,53 @@ class ImagesDownloader():
     Class for download images from tarkov.dev API.
     """
 
-    def __init__(self, path: str | Path = './Images') -> None:
-        """
-        Constructor method for ImagesDownloader class.
+    def __init__(self, path: str | Path, link_fields: List[str]) -> None:
+        """Constructor method for ImagesDownloader class.
 
         Args:
-        path: str or Path object representing the directory where images will be saved.
-        Default is './Images'.
+            path (str | Path): _description_
+            link_fields (List[str]): _description_
 
-        Returns:
-        None
+        Raises:
+            Exception: _description_
         """
+        if not all(field in IMG_LINK_FIELDS for field in link_fields):
+            raise Exception("Bad field name in link_fields.")
         Path(path).mkdir(parents=True, exist_ok=True)
         self.images_path = path
-        self._images_types = IMG_LINK_COLUMNS
-        self.failed_download = {key: [] for key in self._images_types}
-        self._fetch_images_data()
-        self._download_images()
+        self.image_fields = link_fields
+        self.im_id = 0
+        self.images_data = self.__get_image_links()
+        self.failed_download = {key: [] for key in self.image_fields}
 
-    def _fetch_images_data(self) -> None:
-        """
-        Method to fetch images data from API tarkov.dev and store it as a Pandas DataFrame.
-
-        Returns:
-        None
-        """
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(
-            url='https://api.tarkov.dev/graphql',
-            headers=headers,
-            json={'query': QUERY})
-        if response.status_code == 200:
-            response = response.json()
-            norm_response = pd.json_normalize(response['data']['items'])
-            norm_response = norm_response.set_index("id")
-            self.images_data = norm_response
-        else:
-            raise Exception("Query failed to run by returning code of {}. {}".format(
-                response.status_code, QUERY))
-
-    def _download_images(self) -> None:
-        """
-        Method to download images and save them to disk. Skip download if file existst.
+    def __get_image_links(self) -> List[dict]:
+        """Method to get items data from API tarkov.dev.
 
         Returns:
-        None
+            List[dict]: API response incude items info.
         """
-        for column in self._images_types:
-            save_path = Path(self.images_path, column)
+        fields = ['id']
+        fields.extend(self.image_fields)
+        API = APIRequester()
+        response = API.request(name='items', fields=fields)
+        return response
+
+    def download(self):
+        """Dowload images from links in response.
+        """
+        for field in self.image_fields:
+            save_path = Path(self.images_path, field[:-4])
             save_path.mkdir(exist_ok=True)
-            for id, row in self.images_data.iterrows():
-                if (save_path / f"{id}.png").exists():
-                    continue
-                response = requests.get(row[column])
+            for item in self.images_data:
+                link = item[field]
+                response = requests.get(link)
                 if response.status_code == 200:
-                    byte_img = response.content
-                    img = Image.open(BytesIO(byte_img)).convert(mode='RGBA')
-                    img.save(save_path / f"{id}.png")
+                    item_id = item['id']
+                    image_id = self.im_id
+                    image = Image.open(
+                        BytesIO(response.content)).convert(mode='RGBA')
+                    image_name = f'{item_id}.{image_id}.png'
+                    image.save(save_path / image_name)
+                    self.im_id += 1
                 else:
-                    self.failed_download[column].append(row[column])
+                    self.failed_download[field].append(link)

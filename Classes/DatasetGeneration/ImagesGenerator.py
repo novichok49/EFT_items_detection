@@ -11,7 +11,7 @@ import shutil
 
 class ImagesGenerator:
     """The class contains functions for
-    construct images from other images for training model.
+        construct images from other images for training model.
     """
 
     def __init__(self,
@@ -22,16 +22,13 @@ class ImagesGenerator:
         """Class constructor
 
         Args:
-        df (pd.DataFrame): The data containing information about the images.
-        path (str | Path): The path to the directory
-        containing the images dirs.
-        grid_size (int, optional): The size of the grid
-        for rescaling the images. Defaults to 64.
-        seed (int, optional): The seed to use for random number
-        generation for class. Defaults to None.
-
-        Returns:
-        None
+            df (pd.DataFrame): The data containing information about the images.
+            path (str | Path): The path to the directory
+                containing the images dirs.
+            grid_size (int, optional): The size of the grid
+                for rescaling the images. Defaults to 64.
+            seed (int, optional): The seed to use for random number
+                generation for class. Defaults to None.
         """
         self.df = df
         self.path = Path(path)
@@ -44,16 +41,13 @@ class ImagesGenerator:
                                images_dir: str,
                                overwrite: bool = True) -> None:
         """Rescale all images in the specified directory
-        by the grid size and save them.
+            by the grid size and save them.
 
         Args:
-        images_dir (str): Directory containing the images to be rescaled.
-        overwrite (bool, optional): Whether to overwrite the original images.
-        If False, the rescaled images will be saved in a new directory named
-        "{images_dir}.rescaled". Defaults to True.
-
-        Returns:
-        None
+            images_dir (str): Directory containing the images to be rescaled.
+            overwrite (bool, optional): Whether to overwrite the original images.
+                If False, the rescaled images will be saved in a new directory named
+                "{images_dir}.rescaled". Defaults to True.
         """
         pathes = Path(self.path, images_dir).glob("*")
         if not overwrite:
@@ -74,15 +68,12 @@ class ImagesGenerator:
     def rotate_images(self,
                       images_dir: str) -> None:
         """Rotate all images in the specified directory by 90 degrees
-        counter-clockwise and save them in a new directory
-        named "{images_dir}.rotated".
+            counter-clockwise and save them in a new directory
+            named "{images_dir}.rotated".
 
         Args:
-        images_dir (str): The name of the directory containing
-        the images to be rotated.
-
-        Returns:
-        None
+            images_dir (str): The name of the directory containing
+                the images to be rotated.
         """
         pathes = Path(self.path, images_dir).glob("*")
         new_path = self.path / f'{images_dir}.rotated'
@@ -103,14 +94,11 @@ class ImagesGenerator:
     def merge_image_dirs(self,
                          im_sourses: List[str]):
         """Merge multiple directories containing images
-        into a single directory named "Images".
+            into a single directory named "Images".
 
         Args:
-        im_sourses (List[str]): A list of directory names
-        containing the images to be merged.
-
-        Returns:
-        None
+            im_sourses (List[str]): A list of directory names
+            containing the images to be merged.
         """
         # TODO add path check for im_sourses
         im_id = 0
@@ -129,18 +117,18 @@ class ImagesGenerator:
                         bboxes: Dict,
                         background_image: Image.Image) -> Tuple[Image.Image, Dict]:
         """Plot a grid image on a background image and adjust the
-        bounding box coordinates accordingly.
+            bounding box coordinates accordingly.
 
         Args:
-        grid_image (Image.Image): The image of the grid to be plotted.
-        bboxes (Dict): A dictionary containing bounding box
-        information for the objects in the grid.
-        background_image (Image.Image): The image of the background to
-        plot the grid on.
+            grid_image (Image.Image): The image of the grid to be plotted.
+            bboxes (Dict): A dictionary containing bounding box
+                information for the objects in the grid.
+            background_image (Image.Image): The image of the background to
+                plot the grid on.
 
         Returns:
-        A tuple containing the resulting image with the grid plotted on the
-        background and the updated bounding box coordinates.
+             tuple containing the resulting image with the grid plotted on the
+                background and the updated bounding box coordinates.
         """
         cutted_im = ImagesGenerator.cut_empty_parts(grid_image)
         paste_x = np.random.randint(
@@ -162,13 +150,13 @@ class ImagesGenerator:
     def cut_empty_parts(cls,
                         image: Image.Image) -> Image.Image:
         """Remove the empty parts of an image based on
-        its alpha channel and return the resulting cropped image.
+            its alpha channel and return the resulting cropped image.
 
         Args:
-        image (Image.Image): The image to be cropped.
+            image (Image.Image): The image to be cropped.
 
         Returns:
-        The resulting cropped image.
+            The resulting cropped image.
         """
         alpha = image.getchannel('A')
         alpha_bbox = alpha.getbbox()
