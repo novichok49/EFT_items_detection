@@ -2,7 +2,7 @@ from PIL import Image
 from pathlib import Path
 from io import BytesIO
 import requests
-from .APIRequester import APIRequester
+from Classes.Utils import APIRequester
 from typing import List
 
 # Fields contains link to image download
@@ -17,7 +17,8 @@ class ImagesDownloader():
     """
 
     def __init__(self, path: str | Path, link_fields: List[str]) -> None:
-        """Constructor method for ImagesDownloader class.
+        """
+        Constructor method for ImagesDownloader class.
 
         Args:
             path (str | Path): _description_
@@ -36,7 +37,8 @@ class ImagesDownloader():
         self.failed_download = {key: [] for key in self.image_fields}
 
     def __get_image_links(self) -> List[dict]:
-        """Method to get items data from API tarkov.dev.
+        """
+        Method to get items data from API tarkov.dev.
 
         Returns:
             List[dict]: API response incude items info.
@@ -48,7 +50,8 @@ class ImagesDownloader():
         return response
 
     def download(self):
-        """Dowload images from links in response.
+        """
+        Dowload images from links in response.
         """
         for field in self.image_fields:
             save_path = Path(self.images_path, field[:-4])
