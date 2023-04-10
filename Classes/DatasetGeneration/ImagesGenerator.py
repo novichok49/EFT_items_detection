@@ -4,7 +4,7 @@ from PIL import Image
 import os
 import numpy as np
 from typing import List, Tuple, Dict
-from Classes.DatasetGeneration import GridPacker
+from Classes.Utils import GridPacker
 from copy import deepcopy
 import shutil
 
