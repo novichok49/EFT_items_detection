@@ -16,7 +16,7 @@ class ImagesDataset(Dataset):
         filename = self.image_filenames[index]
         image_path = os.path.join(self.path, filename)
         image = Image.open(image_path)
-        class_name = filename.split('.')[0]
+        class_name = filename.split('_')[0]
         class_code = self.encode(class_name)
         return image, class_code
 
