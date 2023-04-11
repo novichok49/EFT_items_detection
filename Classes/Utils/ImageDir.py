@@ -27,3 +27,6 @@ class ImageDir:
             return result
         else:
             raise StopIteration
+    
+    def update_filepathes(self):
+        self.image_filenames = os.listdir(self.path)

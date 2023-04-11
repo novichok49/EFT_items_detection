@@ -7,6 +7,7 @@ from typing import List, Tuple, Dict
 from Classes.Utils import GridPacker, ImageDirs, APIRequester
 from copy import deepcopy
 import shutil
+from sklearn.preprocessing import LabelEncoder
 
 
 class ImagesGenerator:
@@ -21,15 +22,18 @@ class ImagesGenerator:
             name='items',
             fields=['id', 'shortName', 'width', 'height'])
         np.random.seed(seed)
+        label_encoder = LabelEncoder()
 
         self.path = Path(path)
         self.image_dirs = ImageDirs(path, image_dirs)
         self.image_info = pd.json_normalize(response).set_index('id')
+        classes_name = self.image_info['shortName'].to_list()
+        classes_code = label_encoder.fit_transform(classes_name)
+        self.image_info['class_code'] = classes_code
         self.grid_size = grid_size
 
     def rescale_images_by_grid(self, dir: str) -> None:
-        images = self.image_dirs[dir]
-        for image_path in images:
+        for image_path in self.image_dirs[dir]:
             filename = os.path.basename(image_path)
             image_id = filename.split('.')[0]
             w = self.image_info.loc[image_id, 'width']
@@ -48,14 +52,27 @@ class ImagesGenerator:
             image = image.rotate(-90, expand=True)
             image.save(save_path / new_filename)
 
-    def generate(
+    def generate_dataset(
             self,
-            size: Tuple[int, int],
+            grid_im_size: Tuple[int, int],
             samples: int,
-            im_sourses: List[str],
-            bg_sourse: str) -> None:
-        pass
-
+            im_dir: str,
+            bg_dir: str) -> None:
+        dateset_info = pd.DataFrame(
+            columns=['image_id', 'class_code', 'class_name'])
+        return self.image_info
+    
+    def rename_images(self, dir):
+        index = 0
+        path = self.path / dir
+        for image_path in self.image_dirs[dir]:
+            filename = os.path.basename(image_path)
+            image_id = filename.split('.')[0]
+            class_code = self.image_info.loc[image_id]['class_code']
+            new_name = f'{index}_{class_code}_.png'
+            os.rename(image_path, path / new_name)
+            index += 1
+        self.image_dirs[dir].update_filepathes()
     # def merge_image_dirs(self,
     #                      im_sourses: List[str]):
     #     # TODO add path check for im_sourses
