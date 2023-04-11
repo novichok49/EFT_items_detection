@@ -14,7 +14,7 @@ class ImageDir:
     def __getitem__(self, index) -> Tuple:
         filename = self.image_filenames[index]
         image_path = self.path / filename
-        return Image.open(image_path)
+        return image_path
     
     def __iter__(self):
         self.index = 0

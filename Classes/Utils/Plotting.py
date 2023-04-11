@@ -8,11 +8,6 @@ from typing import Dict, List
 
 
 def plot_image(image_source: Path | Image.Image | str, image_bboxs: Dict = None) -> None:
-    """Plot image by path or PIL Image object.
-
-    Args:
-        image_source (Path | Image.Image | str): Path to image or image.
-    """
     fig, ax = plt.subplots(1)
     if isinstance(image_source, (Path, str)):
         try:

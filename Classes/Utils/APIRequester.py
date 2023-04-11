@@ -7,29 +7,10 @@ HEADERS = {"Content-Type": "application/json"}
 
 
 class APIRequester:
-    """
-    A class for making requests
-    to a tarkov.dev API returning the response data
-    in a Python dictionary format.
-    """
-
     def __init__(self) -> None:
         self._last_response = None
 
     def request(self, name: str, fields: List[str]) -> List[Dict]:
-        """
-        TODO
-
-        Args:
-            name (str): _description_
-            fields (List[str]): _description_
-
-        Raises:
-            Exception: _description_
-
-        Returns:
-            List[Dict]: _description_
-        """
         query = Query(name=name, fields=fields)
         query = f'{{{query.render()}}}'
         response = requests.post(
