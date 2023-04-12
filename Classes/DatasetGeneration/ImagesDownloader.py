@@ -2,7 +2,7 @@ from PIL import Image
 from pathlib import Path
 from io import BytesIO
 import requests
-from Classes.Utils import APIRequester
+from Classes.Utils import APIRequester, ImagesDir
 from typing import List
 
 # Fields contains link to image download
@@ -17,33 +17,16 @@ class ImagesDownloader():
     """
 
     def __init__(self, path: str | Path, link_fields: List[str]) -> None:
-        """
-        Constructor method for ImagesDownloader class.
-
-        Args:
-            path (str | Path): _description_
-            link_fields (List[str]): _description_
-
-        Raises:
-            Exception: _description_
-        """
         if not all(field in IMG_LINK_FIELDS for field in link_fields):
             raise Exception("Bad field name in link_fields.")
         Path(path).mkdir(parents=True, exist_ok=True)
         self.images_path = path
         self.image_fields = link_fields
-        self.im_id = 0
         self.images_data = self.__get_image_links()
         self.failed_download = {key: [] for key in self.image_fields}
 
     def __get_image_links(self) -> List[dict]:
-        """
-        Method to get items data from API tarkov.dev.
-
-        Returns:
-            List[dict]: API response incude items info.
-        """
-        fields = ['id']
+        fields = ['name']
         fields.extend(self.image_fields)
         API = APIRequester()
         response = API.request(name='items', fields=fields)
@@ -53,19 +36,16 @@ class ImagesDownloader():
         """
         Dowload images from links in response.
         """
+        im_dir = ImagesDir(self.images_path)
         for field in self.image_fields:
-            save_path = Path(self.images_path, field[:-4])
-            save_path.mkdir(exist_ok=True)
             for item in self.images_data:
                 link = item[field]
                 response = requests.get(link)
                 if response.status_code == 200:
-                    item_id = item['id']
-                    image_id = self.im_id
+                    item_class = item['name']
                     image = Image.open(
                         BytesIO(response.content)).convert(mode='RGBA')
-                    image_name = f'{item_id}.{image_id}.png'
-                    image.save(save_path / image_name)
-                    self.im_id += 1
+                    im_dir.add_image(image, item_class)
                 else:
                     self.failed_download[field].append(link)
+        im_dir.save_info()

@@ -55,12 +55,23 @@ class ImagesGenerator:
     def generate_dataset(
             self,
             grid_im_size: Tuple[int, int],
+            samples_on_image: int,
             samples: int,
             im_dir: str,
             bg_dir: str) -> None:
-        dateset_info = pd.DataFrame(
-            columns=['image_id', 'class_code', 'class_name'])
-        return self.image_info
+        # im_pathes = deepcopy(self.image_dirs[im_dir])
+        # k = int(np.ceil(len(im_pathes) / samples_on_image))
+        im_pathes = deepcopy(self.image_dirs[im_dir])
+        w = grid_im_size[0]
+        h = grid_im_size[1]
+        grid_packer = GridPacker(w, h, self.grid_size)
+        for i in range(samples):
+            sample = np.random.choice(im_pathes, samples_on_image)
+            
+
+
+        
+
     
     def rename_images(self, dir):
         index = 0
@@ -73,18 +84,6 @@ class ImagesGenerator:
             os.rename(image_path, path / new_name)
             index += 1
         self.image_dirs[dir].update_filepathes()
-    # def merge_image_dirs(self,
-    #                      im_sourses: List[str]):
-    #     # TODO add path check for im_sourses
-    #     im_id = 0
-    #     save_path = Path(self.path / "Images")
-    #     save_path.mkdir(exist_ok=True)
-    #     for sourse in im_sourses:
-    #         pathes = Path(self.path / sourse).glob('*')
-    #         for path in pathes:
-    #             class_id = os.path.basename(path).split('.')[0]
-    #             shutil.copy(path, save_path / f'{class_id}.{im_id}.png')
-    #             im_id += 1
 
     @classmethod
     def plot_grid_on_bg(
@@ -114,3 +113,7 @@ class ImagesGenerator:
         alpha_bbox = alpha.getbbox()
         res = image.crop(alpha_bbox)
         return res
+    
+    @classmethod
+    def non_overlap_samples(n, size):
+        pass
