@@ -4,7 +4,7 @@ from PIL import Image
 import os
 import numpy as np
 from typing import List, Tuple, Dict
-from Classes.Utils import GridPacker, ImageDirs, APIRequester
+from Classes.Utils import GridPacker, APIRequester
 from copy import deepcopy
 import shutil
 from sklearn.preprocessing import LabelEncoder

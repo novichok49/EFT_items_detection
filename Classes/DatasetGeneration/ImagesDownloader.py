@@ -48,4 +48,4 @@ class ImagesDownloader():
                     im_dir.add_image(image, item_class)
                 else:
                     self.failed_download[field].append(link)
-        im_dir.save_info()
+        im_dir.save_info_state()
