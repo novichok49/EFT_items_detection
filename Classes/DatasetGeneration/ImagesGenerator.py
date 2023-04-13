@@ -4,10 +4,8 @@ from PIL import Image
 import os
 import numpy as np
 from typing import List, Tuple, Dict
-from Classes.Utils import GridPacker, APIRequester
+from Classes.Utils import GridPacker, APIRequester, ImagesDir
 from copy import deepcopy
-import shutil
-from sklearn.preprocessing import LabelEncoder
 
 
 class ImagesGenerator:
@@ -16,20 +14,16 @@ class ImagesGenerator:
             path: str | Path,
             image_dirs: List[str],
             grid_size: int = 64,
-            seed: int = None) -> None:
-        API = APIRequester()
-        response = API.post(
+            seed: int = None):
+        response = APIRequester.post(
             name='items',
-            fields=['id', 'shortName', 'width', 'height'])
+            fields=['name', 'width', 'height'])
         np.random.seed(seed)
-        label_encoder = LabelEncoder()
 
         self.path = Path(path)
-        self.image_dirs = ImageDirs(path, image_dirs)
-        self.image_info = pd.json_normalize(response).set_index('id')
-        classes_name = self.image_info['shortName'].to_list()
-        classes_code = label_encoder.fit_transform(classes_name)
-        self.image_info['class_code'] = classes_code
+        self.image_dirs = ImagesDir(path)
+        self.image_info = pd.json_normalize(response)
+
         self.grid_size = grid_size
 
     def rescale_images_by_grid(self, dir: str) -> None:
