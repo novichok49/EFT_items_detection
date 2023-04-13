@@ -28,8 +28,7 @@ class ImagesDownloader():
     def __get_image_links(self) -> List[dict]:
         fields = ['name']
         fields.extend(self.image_fields)
-        API = APIRequester()
-        response = API.request(name='items', fields=fields)
+        response = APIRequester.post(name='items', fields=fields)
         return response
 
     def download(self):
