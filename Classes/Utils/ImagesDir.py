@@ -10,7 +10,7 @@ class ImagesDir:
         if not self._dir_path.exists():
             raise FileNotFoundError(f'No such directory: {self._dir_path}')
         # Load object info from file if exist
-        class_info = ImagesDir.__load_state(self._dir_path)
+        class_info = ImagesDir.load_state(self._dir_path)
         encode_map, decode_map, last_image_id, last_class_id, im_files = class_info
         self._encode_map = encode_map
         self._decode_map = decode_map
@@ -55,6 +55,10 @@ class ImagesDir:
         with open(self._dir_path / 'ImagesDir.json', 'w') as file:
             json.dump(data, file)
 
+    def __len__(self):
+         # TODO Write method
+        pass
+
     def add_image(self, image: Image.Image, class_name: str) -> None:
         if class_name in self._encode_map:
             class_id = self._encode_map[class_name]
@@ -65,20 +69,33 @@ class ImagesDir:
             self._last_class_id += 1
 
         save_name = f'{self._last_image_id}_{class_id}.png'
-
-        image.save(self._dir_path / save_name)
+        if isinstance(image, Image.Image):
+            image.save(self._dir_path / save_name)
+        elif isinstance(image, Path):
+            image.replace(self._dir_path / save_name)
+        else:
+            raise TypeError(f'Unsupported arg type {type(image)}')
         self._im_files.append(Path(save_name))
-
         self._last_image_id += 1
 
     def decode_id(self, class_id: int) -> str:
         return self._decode_map[class_id]
-    
+
     def encode_class(self, class_name: str) -> int:
         return self._encode_map[class_name]
 
     def save_state(self):
         self.__del__()
+
+    def merge(self, dir: 'ImagesDir'):
+        for im_path, class_id in dir:
+            class_name = dir.decode_id(class_id)
+            self.add_image(image=im_path, class_name=class_name)
+            # dir.drop(class_id)
+
+    #TODO rebuild method and index
+    # def drop(self, index):
+    #     del self._im_files[index]
 
     @property
     def encode_map(self):
@@ -88,8 +105,12 @@ class ImagesDir:
     def decode_map(self):
         return self._decode_map
 
-    @classmethod
-    def __path_sort(cls, x: Path):
+    @property
+    def last_image_id(self):
+        return self._last_image_id
+
+    @staticmethod
+    def path_sort(x: Path):
         try:
             res = int(x.stem.split('_')[0])
         except ValueError:
@@ -97,8 +118,8 @@ class ImagesDir:
             res = 9223372036854775807
         return res
 
-    @classmethod
-    def __load_state(cls, path: Path):
+    @staticmethod
+    def load_state(path: Path):
         label_path = path / 'ImagesDir.json'
         if label_path.exists():
             with open(label_path, 'r') as file:
@@ -108,7 +129,7 @@ class ImagesDir:
             last_image_id = dir_info['last_image_id']
             last_class_id = dir_info['last_class_id']
             im_files = [Path(file.name)
-                        for file in sorted(path.iterdir(), key=cls.__path_sort)
+                        for file in sorted(path.iterdir(), key=ImagesDir.path_sort)
                         if (not file.is_dir()) and (file.suffix == '.png')]
         else:
             encode_map = {}

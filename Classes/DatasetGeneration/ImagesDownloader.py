@@ -33,7 +33,7 @@ class ImagesDownloader:
         self._images_data = APIRequester.post(name='items', fields=fields)
         self._failed_download_links = {key: [] for key in self._image_fields}
 
-    def download(self, path: str | Path) -> Dict[str:ImagesDir]:
+    def download(self, path: str | Path) -> Dict[str, ImagesDir]:
         """
         Dowload images from fields to ImagesDir objects.
 
