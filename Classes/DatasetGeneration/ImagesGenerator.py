@@ -18,7 +18,7 @@ class ImagesGenerator:
             grid_size: int = 64,
             seed: int = None) -> None:
         API = APIRequester()
-        response = API.request(
+        response = API.post(
             name='items',
             fields=['id', 'shortName', 'width', 'height'])
         np.random.seed(seed)

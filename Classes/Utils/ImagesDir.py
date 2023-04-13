@@ -8,9 +8,8 @@ class ImagesDir:
     def __init__(self, path: str | Path):
         self._dir_path = Path(path)
         if not self._dir_path.exists():
-            raise FileNotFoundError(
-                f'No such file or directory: {self._dir_path}')
-        # Load class info from file if exist
+            raise FileNotFoundError(f'No such directory: {self._dir_path}')
+        # Load object info from file if exist
         class_info = ImagesDir.__load_state(self._dir_path)
         encode_map, decode_map, last_image_id, last_class_id, im_files = class_info
         self._encode_map = encode_map
@@ -18,28 +17,6 @@ class ImagesDir:
         self._last_image_id = last_image_id
         self._last_class_id = last_class_id
         self._im_files = im_files
-
-    def add_image(self, image: Image.Image, class_name: str) -> None:
-        if class_name in self._encode_map:
-            class_id = self._encode_map[class_name]
-        else:
-            self._encode_map[class_name] = self._last_class_id
-            self._decode_map[self._last_class_id] = class_name
-            class_id = self._last_class_id
-            self._last_class_id += 1
-
-        save_name = f'{self._last_image_id}_{class_id}.png'
-
-        image.save(self._dir_path / save_name)
-        self._im_files.append(Path(save_name))
-
-        self._last_image_id += 1
-
-    def decode_id(self, class_id: int) -> str:
-        return self._decode_map[class_id]
-
-    def save_state(self):
-        self.__del__()
 
     def __getitem__(self, image_id: slice | int) -> Tuple[Image.Image, int]:
         if isinstance(image_id, slice):
@@ -78,20 +55,45 @@ class ImagesDir:
         with open(self._dir_path / 'ImagesDir.json', 'w') as file:
             json.dump(data, file)
 
+    def add_image(self, image: Image.Image, class_name: str) -> None:
+        if class_name in self._encode_map:
+            class_id = self._encode_map[class_name]
+        else:
+            self._encode_map[class_name] = self._last_class_id
+            self._decode_map[self._last_class_id] = class_name
+            class_id = self._last_class_id
+            self._last_class_id += 1
+
+        save_name = f'{self._last_image_id}_{class_id}.png'
+
+        image.save(self._dir_path / save_name)
+        self._im_files.append(Path(save_name))
+
+        self._last_image_id += 1
+
+    def decode_id(self, class_id: int) -> str:
+        return self._decode_map[class_id]
+    
+    def encode_class(self, class_name: str) -> int:
+        return self._encode_map[class_name]
+
+    def save_state(self):
+        self.__del__()
+
     @property
     def encode_map(self):
         return self._encode_map
-    
+
     @property
     def decode_map(self):
         return self._decode_map
 
     @classmethod
-    def __path_sort(cls, x):
+    def __path_sort(cls, x: Path):
         try:
             res = int(x.stem.split('_')[0])
         except ValueError:
-            # if name is not in return max int64
+            # if name is not int return max int64
             res = 9223372036854775807
         return res
 

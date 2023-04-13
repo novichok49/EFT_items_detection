@@ -24,7 +24,9 @@ class GridPacker:
     def check_position(self, i: int, j: int, w: int, h: int) -> bool:
         for row in range(i, i + h // self.cell_size):
             for col in range(j, j + w // self.cell_size):
-                if row >= len(self.grid) or col >= len(self.grid[0]) or self.grid[row][col] is not None:
+                if row >= len(self.grid) or \
+                    col >= len(self.grid[0]) or \
+                        self.grid[row][col] is not None:
                     return False
         return True
 

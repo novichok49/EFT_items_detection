@@ -1,29 +1,42 @@
+from requests.exceptions import RequestException
 import requests
 from graphql_query import Query
 from typing import List, Dict
 
-API_URL = 'https://api.tarkov.dev/graphql'
-HEADERS = {"Content-Type": "application/json"}
-
 
 class APIRequester:
-    def __init__(self) -> None:
-        self._last_response = None
+    """
+    The APIRequester class is a Python class that allows you to make
+    API requests to api.tarkov.dev.
+    """
+    API_URL: str = 'https://api.tarkov.dev/graphql'
+    HEADERS: Dict = {"Content-Type": "application/json"}
 
-    def request(self, name: str, fields: List[str]) -> List[Dict]:
+    @classmethod
+    def post(cls, name: str, fields: List[str]) -> List[Dict]:
+        """
+        A class method that allows you to make a POST request to the
+        API with the given parameters.
+        Arguments:
+            name -- Representing the object name from api.tarkov.dev.
+            fields -- Representing the fields you want to retrieve from
+                name object.
+
+        Raises:
+            RequestException: Response return bad status_code.
+
+        Returns:
+            Response data in json format.
+        """
         query = Query(name=name, fields=fields)
         query = f'{{{query.render()}}}'
         response = requests.post(
-            url=API_URL,
-            headers=HEADERS,
+            url=cls.API_URL,
+            headers=cls.HEADERS,
             json={'query': query})
-        self._last_response = response.json()['data'][name]
+        response = response.json()['data'][name]
         if response.status_code == 200:
-            return self._last_response
+            return response
         else:
-            raise Exception("Query failed to run by returning code of {}. {}".format(
-                response.status_code, query))
-
-    @property
-    def last_response(self):
-        return self._last_response
+            raise RequestException(f"Request failed \
+                with status code {response.status_code}")
