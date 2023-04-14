@@ -6,45 +6,50 @@ import numpy as np
 from typing import List, Tuple, Dict
 from Classes.Utils import GridPacker, APIRequester, ImagesDir
 from copy import deepcopy
-#adadsd
+# adadsd
+
 
 class ImagesGenerator:
     def __init__(
             self,
             path: str | Path,
-            image_dirs: List[str],
+            class_field: str = 'normalizedName',
             grid_size: int = 64,
             seed: int = None):
+        """"""
+        self._path = Path(path)
+        if not self._path.exists():
+            raise FileNotFoundError(f'No such directory: {self._path}')
+        np.random.seed(seed)
+        self._class_field = class_field
         response = APIRequester.post(
             name='items',
-            fields=['name', 'width', 'height'])
-        np.random.seed(seed)
+            fields=[self._class_field, 'width', 'height'])
 
-        self.path = Path(path)
-        self.image_dirs = ImagesDir(path)
-        self.image_info = pd.json_normalize(response)
-
-        self.grid_size = grid_size
+        self._grid_size = grid_size
+        self._image_dirs = {dir.name: ImagesDir(dir)
+                            for dir in self._path.iterdir()
+                            if dir.is_dir()}
+        self._image_info = pd.json_normalize(
+            response).set_index(self._class_field)
 
     def rescale_images_by_grid(self, dir: str) -> None:
-        for image_path in self.image_dirs[dir]:
-            filename = os.path.basename(image_path)
-            image_id = filename.split('.')[0]
-            w = self.image_info.loc[image_id, 'width']
-            h = self.image_info.loc[image_id, 'height']
-            size = (w * self.grid_size, h * self.grid_size)
+        for image_path, class_id in self._image_dirs[dir]:
+            class_name = self._image_dirs[dir].decode_id(class_id)
+            w = self._image_info.loc[class_name, 'width']
+            h = self._image_info.loc[class_name, 'height']
+            size = (w * self._grid_size, h * self._grid_size)
             image = Image.open(image_path)
             image = image.resize(size)
             image.save(image_path)
 
     def aug_rotate_images(self, dir: str) -> None:
-        save_path = self.path / dir
-        for image_path in self.image_dirs[dir]:
-            filename = os.path.basename(image_path)
-            new_filename = f'{filename[:-4]}.r.png'
+        save_path = self._path / dir
+        for image_path in self._image_dirs[dir]:
+
             image = Image.open(image_path)
             image = image.rotate(-90, expand=True)
-            image.save(save_path / new_filename)
+            
 
     def generate_dataset(
             self,
@@ -55,36 +60,30 @@ class ImagesGenerator:
             bg_dir: str) -> None:
         # im_pathes = deepcopy(self.image_dirs[im_dir])
         # k = int(np.ceil(len(im_pathes) / samples_on_image))
-        im_pathes = deepcopy(self.image_dirs[im_dir])
+        im_pathes = deepcopy(self._image_dirs[im_dir])
         w = grid_im_size[0]
         h = grid_im_size[1]
-        grid_packer = GridPacker(w, h, self.grid_size)
+        grid_packer = GridPacker(w, h, self._grid_size)
         for i in range(samples):
             sample = np.random.choice(im_pathes, samples_on_image)
-            
 
+    # def rename_images(self, dir):
+    #     index = 0
+    #     path = self._path / dir
+    #     for image_path in self._image_dirs[dir]:
+    #         filename = os.path.basename(image_path)
+    #         image_id = filename.split('.')[0]
+    #         class_code = self._image_info.loc[image_id]['class_code']
+    #         new_name = f'{index}_{class_code}_.png'
+    #         os.rename(image_path, path / new_name)
+    #         index += 1
+    #     self._image_dirs[dir].update_filepathes()
 
-        
-
-    
-    def rename_images(self, dir):
-        index = 0
-        path = self.path / dir
-        for image_path in self.image_dirs[dir]:
-            filename = os.path.basename(image_path)
-            image_id = filename.split('.')[0]
-            class_code = self.image_info.loc[image_id]['class_code']
-            new_name = f'{index}_{class_code}_.png'
-            os.rename(image_path, path / new_name)
-            index += 1
-        self.image_dirs[dir].update_filepathes()
-
-    @classmethod
+    @staticmethod
     def plot_grid_on_bg(
-                    cls,
-                    grid_image: Image.Image,
-                    bboxes: Dict,
-                    background_image: Image.Image) -> Tuple[Image.Image, Dict]:
+            grid_image: Image.Image,
+            bboxes: Dict,
+            background_image: Image.Image) -> Tuple[Image.Image, Dict]:
         cutted_im = ImagesGenerator.cut_empty_parts(grid_image)
         paste_x = np.random.randint(
             0, background_image.size[0] - cutted_im.size[0])
@@ -101,13 +100,13 @@ class ImagesGenerator:
             new_bboxes[bbox][:, 1] += paste_y
         return background_image, new_bboxes
 
-    @classmethod
-    def cut_empty_parts(cls, image: Image.Image) -> Image.Image:
+    @staticmethod
+    def cut_empty_parts(image: Image.Image) -> Image.Image:
         alpha = image.getchannel('A')
         alpha_bbox = alpha.getbbox()
         res = image.crop(alpha_bbox)
         return res
-    
-    @classmethod
-    def non_overlap_samples(n, size):
-        pass
+
+    @property
+    def image_dirs(self):
+        return list(self._image_dirs.keys())
