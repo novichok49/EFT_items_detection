@@ -1,12 +1,10 @@
 import pandas as pd
 from pathlib import Path
 from PIL import Image
-import os
 import numpy as np
 from typing import List, Tuple, Dict
 from Classes.Utils import GridPacker, APIRequester, ImagesDir
 from copy import deepcopy
-# adadsd
 
 
 class ImagesGenerator:
@@ -16,7 +14,6 @@ class ImagesGenerator:
             class_field: str = 'normalizedName',
             grid_size: int = 64,
             seed: int = None):
-        """"""
         self._path = Path(path)
         if not self._path.exists():
             raise FileNotFoundError(f'No such directory: {self._path}')
@@ -30,13 +27,19 @@ class ImagesGenerator:
         self._image_dirs = {dir.name: ImagesDir(dir)
                             for dir in self._path.iterdir()
                             if dir.is_dir()}
-        self._image_info = pd.json_normalize(
-            response).set_index(self._class_field)
-        
-    def __getitem__(self, key:str):
+        self._image_info = pd.json_normalize(response)\
+            .set_index(self._class_field)
+
+    def __getitem__(self, key: str):
         return self._image_dirs[key]
 
     def rescale_images_by_grid(self, dir: str) -> None:
+        """
+        Rescale images in `dir` folder and overwrite.
+
+        Arguments:
+            `dir` -- Directory name in `image_dirs` property.
+        """
         for image_path, class_id in self._image_dirs[dir]:
             class_name = self._image_dirs[dir].decode_id(class_id)
             w = self._image_info.loc[class_name, 'width']
@@ -47,6 +50,13 @@ class ImagesGenerator:
             image.save(image_path)
 
     def aug_rotate_images(self, dir: str) -> None:
+        """
+        Rotate all images in the `dir` 90 degrees clockwise
+        and save them in a new folder named `dir_r90`.
+
+        Arguments:
+            `dir` -- Directory name in `image_dirs` property.
+        """
         save_dir_name = f'{dir}_r90'
         save_dir = Path(self._path / save_dir_name)
         save_dir.mkdir(exist_ok=True)
@@ -57,35 +67,41 @@ class ImagesGenerator:
             image = image.rotate(-90, expand=True)
             self._image_dirs[save_dir_name].add_image(image, class_name)
         self._image_dirs[save_dir_name].save_state()
-            
 
     def generate_dataset(
             self,
-            grid_im_size: Tuple[int, int],
-            samples_on_image: int,
-            samples: int,
-            im_dir: str,
-            bg_dir: str) -> None:
-        # im_pathes = deepcopy(self.image_dirs[im_dir])
-        # k = int(np.ceil(len(im_pathes) / samples_on_image))
-        im_pathes = deepcopy(self._image_dirs[im_dir])
-        w = grid_im_size[0]
-        h = grid_im_size[1]
-        grid_packer = GridPacker(w, h, self._grid_size)
-        for i in range(samples):
-            sample = np.random.choice(im_pathes, samples_on_image)
+            size: Tuple[int, int],
+            classes_on_image: int,
+            count_base_images: int,
+            base_dir: str,
+            backgrounds_dir: str | Path,
+            dataset_name: str = 'Mydataset') -> None:
+        im_id = 0
+        dataset_path = self._path / dataset_name
+        dataset_path.mkdir(exist_ok=True)
+        backgrounds_dir = Path(backgrounds_dir)
+        bg_ims = [bg_im for bg_im in backgrounds_dir.iterdir()]
+        packer = GridPacker(512, size[1] - 1, self._grid_size)
 
-    # def rename_images(self, dir):
-    #     index = 0
-    #     path = self._path / dir
-    #     for image_path in self._image_dirs[dir]:
-    #         filename = os.path.basename(image_path)
-    #         image_id = filename.split('.')[0]
-    #         class_code = self._image_info.loc[image_id]['class_code']
-    #         new_name = f'{index}_{class_code}_.png'
-    #         os.rename(image_path, path / new_name)
-    #         index += 1
-    #     self._image_dirs[dir].update_filepathes()
+        for _ in range(count_base_images):
+            base_imgs = self._image_dirs[base_dir][:]
+            np.random.shuffle(base_imgs)
+            slice_range = int(np.ceil(len(base_imgs) / classes_on_image))
+            for i in range(slice_range):
+                start = i * classes_on_image
+                stop = i * classes_on_image + classes_on_image
+                im_slice = base_imgs[start:stop]
+                grid_im, bboxes = packer.pack(im_slice)
+
+                bg_im: Image.Image = Image.open(np.random.choice(bg_ims, 1)[0])
+                bg_im = bg_im.resize(size)
+                gen_im, bboxes = ImagesGenerator.plot_grid_on_bg(
+                    grid_image=grid_im,
+                    bboxes=bboxes,
+                    background_image=bg_im)
+                filename = f'{im_id}.png'
+                gen_im.save(dataset_path / filename)
+                im_id += 1
 
     @staticmethod
     def plot_grid_on_bg(

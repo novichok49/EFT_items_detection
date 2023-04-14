@@ -1,6 +1,7 @@
 from typing import List, Tuple, Dict
 from PIL import Image
 from numpy import array
+from pathlib import Path
 
 # TODO Add doc
 
@@ -35,9 +36,13 @@ class GridPacker:
             for col in range(x // self.cell_size, (x + w) // self.cell_size):
                 self.grid[row][col] = (x, y, w, h)
 
-    def pack(self, images: List[Tuple]) -> Tuple[Image.Image, Dict]:
+    def pack(self, images: List[Tuple[Image.Image, str]]) -> Tuple[Image.Image, Dict]:
         out_image = Image.new('RGBA', (self.width, self.height))
         bboxs = {}
+        # If images has Path Instead of Image.Image open all Images
+        if all([isinstance(im, Path) for im, _ in images]):
+            images = [(Image.open(path), class_name)
+                      for path, class_name in images]
         for image, class_name in images:
             position = self.find_best_position(image.size)
             if position is not None:
@@ -49,6 +54,8 @@ class GridPacker:
                 else:
                     bboxs[class_name] = [bbox]
                 self.update_grid(x, y, w, h)
+        self.grid = [[None for _ in range(self.width // self.cell_size)]
+                    for _ in range(self.height // self.cell_size)]
         for bbox in bboxs:
             bboxs[bbox] = array(bboxs[bbox])
         return (out_image, bboxs)

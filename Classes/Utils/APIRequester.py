@@ -19,8 +19,8 @@ class APIRequester:
         API with the given parameters.
         
         Arguments:
-            name -- Representing the object name from api.tarkov.dev.
-            fields -- Representing the fields you want to retrieve from
+            `name` -- Representing the object name from api.tarkov.dev.
+            `fields` -- Representing the fields you want to retrieve from
                 name object.
 
         Raises:
