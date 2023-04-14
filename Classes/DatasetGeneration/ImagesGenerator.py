@@ -44,11 +44,16 @@ class ImagesGenerator:
             image.save(image_path)
 
     def aug_rotate_images(self, dir: str) -> None:
-        save_path = self._path / dir
-        for image_path in self._image_dirs[dir]:
-
+        save_dir_name = f'{dir}_r90'
+        save_dir = Path(self._path / save_dir_name)
+        save_dir.mkdir(exist_ok=True)
+        self._image_dirs[save_dir_name] = ImagesDir(save_dir)
+        for image_path, class_id in self._image_dirs[dir]:
+            class_name = self._image_dirs[dir].decode_id(class_id)
             image = Image.open(image_path)
             image = image.rotate(-90, expand=True)
+            self._image_dirs[save_dir_name].add_image(image, class_name)
+        self._image_dirs[save_dir_name].save_state()
             
 
     def generate_dataset(
