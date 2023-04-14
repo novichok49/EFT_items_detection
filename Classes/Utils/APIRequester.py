@@ -17,9 +17,9 @@ class APIRequester:
         """
         A class method that allows you to make a POST request to the
         API with the given parameters.
-        
+
         Arguments:
-            `name` -- Representing the object name from api.tarkov.dev.
+            `name` -- Representing the object name from api.tarkov.dev.\n
             `fields` -- Representing the fields you want to retrieve from
                 name object.
 

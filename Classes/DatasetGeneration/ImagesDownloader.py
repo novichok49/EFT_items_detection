@@ -14,17 +14,17 @@ class ImagesDownloader:
                                   "baseImageLink", "image8xLink",
                                   "inspectImageLink", "image512pxLink"]
 
-    def __init__(self, link_fields: List[str], class_field:str='normalizedName'):
+    def __init__(self, link_fields: List[str], class_field: str = 'normalizedName'):
         """
         Make request to API for images links and save response.
 
         Arguments:
-            link_fields -- Fields containing link to images download
-            class_field -- Field containing image class name
+            `link_fields` -- Fields containing link to images download\n
+            `class_field` -- Field containing image class name
 
         Raises:
             Exception: Bad name fild in link_fields see support fields
-                in IMG_LINK_FIELDS
+                in `IMG_LINK_FIELDS`
         """
         if not all(field in ImagesDownloader.IMG_LINK_FIELDS for field in link_fields):
             raise Exception("Bad field in link_fields.")
@@ -40,7 +40,7 @@ class ImagesDownloader:
         Dowload images from fields to ImagesDir objects.
 
         Arguments:
-            path -- Downloading path.
+            `path` -- Downloading path.
 
         Returns:
             Dict ImagesDir objects with downloaded images.

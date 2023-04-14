@@ -55,7 +55,7 @@ class GridPacker:
                     bboxs[class_name] = [bbox]
                 self.update_grid(x, y, w, h)
         self.grid = [[None for _ in range(self.width // self.cell_size)]
-                    for _ in range(self.height // self.cell_size)]
+                     for _ in range(self.height // self.cell_size)]
         for bbox in bboxs:
             bboxs[bbox] = array(bboxs[bbox])
         return (out_image, bboxs)

@@ -3,7 +3,9 @@ from typing import Tuple
 import os
 from PIL import Image
 
-#TODO Add doc
+# TODO Add doc
+
+
 class ImagesDataset(Dataset):
 
     def __init__(self, path: str) -> None:

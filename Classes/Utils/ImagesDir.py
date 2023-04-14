@@ -56,7 +56,7 @@ class ImagesDir:
             json.dump(data, file)
 
     def __len__(self):
-         # TODO Write method
+        # TODO Write method
         pass
 
     def add_image(self, image: Image.Image, class_name: str) -> None:
@@ -93,7 +93,7 @@ class ImagesDir:
             self.add_image(image=im_path, class_name=class_name)
             # dir.drop(class_id)
 
-    #TODO rebuild method and index
+    # TODO rebuild method and index
     # def drop(self, index):
     #     del self._im_files[index]
 
