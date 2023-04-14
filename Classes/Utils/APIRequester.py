@@ -17,6 +17,7 @@ class APIRequester:
         """
         A class method that allows you to make a POST request to the
         API with the given parameters.
+        
         Arguments:
             name -- Representing the object name from api.tarkov.dev.
             fields -- Representing the fields you want to retrieve from
@@ -34,8 +35,8 @@ class APIRequester:
             url=cls.API_URL,
             headers=cls.HEADERS,
             json={'query': query})
-        response = response.json()['data'][name]
         if response.status_code == 200:
+            response = response.json()['data'][name]
             return response
         else:
             raise RequestException(f"Request failed \
