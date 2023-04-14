@@ -32,6 +32,9 @@ class ImagesGenerator:
                             if dir.is_dir()}
         self._image_info = pd.json_normalize(
             response).set_index(self._class_field)
+        
+    def __getitem__(self, key:str):
+        return self._image_dirs[key]
 
     def rescale_images_by_grid(self, dir: str) -> None:
         for image_path, class_id in self._image_dirs[dir]:
