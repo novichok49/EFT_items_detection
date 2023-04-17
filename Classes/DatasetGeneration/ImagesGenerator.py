@@ -101,6 +101,8 @@ class ImagesGenerator:
                     background_image=bg_im)
                 filename = f'{im_id}.png'
                 #TODO Добавить генерацию json датасета
+                # create(path)
+                # add(image_name, bboxes, image_size)
                 gen_im.save(dataset_path / filename)
                 im_id += 1
 
