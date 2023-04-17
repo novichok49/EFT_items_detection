@@ -23,7 +23,7 @@ class ImagesDownloader:
             `class_field` -- Field containing image class name
 
         Raises:
-            Exception: Bad name fild in link_fields see support fields
+            Exception: Bad name field in link_fields see support fields
                 in `IMG_LINK_FIELDS`
         """
         if not all(field in ImagesDownloader.IMG_LINK_FIELDS for field in link_fields):
