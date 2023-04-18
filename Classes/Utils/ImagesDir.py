@@ -55,10 +55,6 @@ class ImagesDir:
         with open(self._dir_path / 'ImagesDir.json', 'w') as file:
             json.dump(data, file)
 
-    def __len__(self):
-        # TODO Write method
-        pass
-
     def add_image(self, image: Image.Image, class_name: str) -> None:
         if class_name in self._encode_map:
             class_id = self._encode_map[class_name]
@@ -91,11 +87,6 @@ class ImagesDir:
         for im_path, class_id in dir:
             class_name = dir.decode_id(class_id)
             self.add_image(image=im_path, class_name=class_name)
-            # dir.drop(class_id)
-
-    # TODO rebuild method and index
-    # def drop(self, index):
-    #     del self._im_files[index]
 
     @property
     def encode_map(self):
