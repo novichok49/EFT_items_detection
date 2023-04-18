@@ -1,9 +1,11 @@
 from pathlib import Path
 from typing import Dict, Tuple
-from pycocotools.coco import COCO
-class CustomCOCO:
-    def __init__(self, path)->None:
-        self.path = Path(path)
+from torch.utils.data import Dataset
+
+
+class TarkovItemsDataset(Dataset):
+    def __init__(self, images_path: str | Path) -> None:
+        self.path = Path(images_path)
         self.__image_id = 0
         self.__annot_id = 0
         self.__categ_id = 0
@@ -11,15 +13,19 @@ class CustomCOCO:
         self.data = {'images': [],
                      'annotations': [],
                      'categories': []}
-        
+        self.data['categories'].append({})
+
     def __getitem__(self, index):
         pass
-        
+
+    def __len__(self):
+        pass
+
     def add(self,
-            image_name:str,
+            image_name: str,
             size: Tuple,
-            bboxes:Dict) -> None:
-        image = {'id':self.__image_id,
+            bboxes: Dict) -> None:
+        image = {'id': self.__image_id,
                  'file_name': image_name,
                  'width': size[0],
                  'heigth': size[1]}
