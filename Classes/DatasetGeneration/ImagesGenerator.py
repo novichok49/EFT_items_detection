@@ -82,7 +82,7 @@ class ImagesGenerator:
         backgrounds_dir = Path(backgrounds_dir)
         bg_ims = [bg_im for bg_im in backgrounds_dir.iterdir()]
         packer = GridPacker(512, size[1] - 1, self._grid_size)
-
+        data = []
         for _ in range(count_base_images):
             base_imgs = self._image_dirs[base_dir][:]
             np.random.shuffle(base_imgs)
@@ -92,17 +92,21 @@ class ImagesGenerator:
                 stop = i * classes_on_image + classes_on_image
                 im_slice = base_imgs[start:stop]
                 grid_im, bboxes = packer.pack(im_slice)
-
-                bg_im: Image.Image = Image.open(np.random.choice(bg_ims, 1)[0])
+                # Open random background
+                bg_im = Image.open(np.random.choice(bg_ims, 1)[0])
                 bg_im = bg_im.resize(size)
                 gen_im, bboxes = ImagesGenerator.plot_grid_on_bg(
                     grid_image=grid_im,
                     bboxes=bboxes,
                     background_image=bg_im)
                 filename = f'{im_id}.png'
+                return gen_im, bboxes
                 #TODO Добавить генерацию json датасета
-                # create(path)
                 # add(image_name, bboxes, image_size)
+                image_data = {'id': im_id,
+                              'file_name': filename,
+                              'bboxes': bboxes}
+                data.append(image_data)
                 gen_im.save(dataset_path / filename)
                 im_id += 1
 
@@ -125,6 +129,8 @@ class ImagesGenerator:
         for bbox in new_bboxes:
             new_bboxes[bbox][:, 0] += paste_x
             new_bboxes[bbox][:, 1] += paste_y
+            new_bboxes[bbox][:, 2] += paste_x
+            new_bboxes[bbox][:, 3] += paste_y
         return background_image, new_bboxes
 
     @staticmethod

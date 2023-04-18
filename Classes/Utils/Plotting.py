@@ -32,10 +32,12 @@ def plot_bbox(bboxes: Dict, ax=None) -> plt.Axes:
         ax.imshow(Image.new('RGBA', (512, 512)))
     for class_name, list_bbox in bboxes.items():
         for bbox in list_bbox:
-            x, y = bbox[0], bbox[1]
-            w, h = bbox[2], bbox[3]
-            box = patches.Rectangle((x, y), w, h, color='r',
+            x1, y1 = bbox[0], bbox[1]
+            x2, y2 = bbox[2], bbox[3]
+            w = x2 - x1
+            h = y2 - y1
+            box = patches.Rectangle((x1, y1), w, h, color='r',
                                     linestyle='-', fill=False,
                                     linewidth=1)
             ax.add_patch(box)
-            ax.text(x, y + 15, class_name[:5], color='r')
+            ax.text(x1, y1 + 15, class_name, color='r')

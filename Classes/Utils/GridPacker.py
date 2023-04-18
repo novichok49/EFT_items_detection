@@ -48,7 +48,10 @@ class GridPacker:
             if position is not None:
                 x, y, w, h = position
                 out_image.paste(image, (x, y))
-                bbox = [x, y, image.size[0] - 1, image.size[1] - 1]
+                # bbox in format [x1, y1, x2, y2]
+                bbox = [x, y, x + w - 1, y + h - 1]
+                # bbox in format [x1, y, w, h]
+                # bbox = [x, y, w - 1, h - 1]
                 if class_name in bboxs:
                     bboxs[class_name].append(bbox)
                 else:
