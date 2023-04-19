@@ -3,7 +3,6 @@ from typing import Dict, List, Iterable
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms as T
-# from torchvision.transforms
 from PIL import Image
 import json
 
@@ -11,12 +10,14 @@ import json
 class TarkovItemsDataset(Dataset):
     def __init__(self,
                  images_path: str | Path,
-                 labels_map: Dict,
-                 transforms) -> None:
+                 labels_map: Dict = None,
+                 transforms=None) -> None:
         self.images_path = Path(images_path)
         data = self.__try_load(self.images_path)
-
-        self.labels_map = labels_map
+        if labels_map != None:
+            self.labels_map = labels_map
+        else:
+            self.labels_map = data['labels_map']
 
         self.images_map = data['images_map']
         self.images = data['images']
@@ -59,7 +60,8 @@ class TarkovItemsDataset(Dataset):
 
     def save(self) -> None:
         data = {'images': self.images,
-                'images_map': self.images_map}
+                'images_map': self.images_map,
+                'labels_map': self.labels_map}
         file_path = self.images_path / '.json'
         with open(file_path, 'w') as file:
             json.dump(data, file)
@@ -72,13 +74,17 @@ class TarkovItemsDataset(Dataset):
                 res = key
             return res
 
-        hook = lambda dct: {parse_int_keys(k): v for k, v in dct.items()}
+        def hook(dct):
+            return {parse_int_keys(k): v for k, v in dct.items()}
+
         file_path = path / '.json'
         if file_path.exists():
             with open(file_path, 'r') as file:
                 data = json.load(file, object_hook=hook)
             return {'images': data['images'],
-                    'images_map': data['images_map']}
+                    'images_map': data['images_map'],
+                    'labels_map': data['labels_map']}
         else:
             return {'images': {},
-                    'images_map': {}}
+                    'images_map': {},
+                    'labels_map': {}}
