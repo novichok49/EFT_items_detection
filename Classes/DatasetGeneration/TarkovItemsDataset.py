@@ -1,63 +1,84 @@
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, List, Iterable
+import torch
 from torch.utils.data import Dataset
+from torchvision import transforms as T
+# from torchvision.transforms
+from PIL import Image
+import json
 
 
 class TarkovItemsDataset(Dataset):
-    def __init__(self, images_path: str | Path) -> None:
-        self.path = Path(images_path)
-        self.__image_id = 0
-        self.__annot_id = 0
-        self.__categ_id = 0
-        self.category_map = {}
-        self.data = {'images': [],
-                     'annotations': [],
-                     'categories': []}
-        self.data['categories'].append({})
+    def __init__(self,
+                 images_path: str | Path,
+                 labels_map: Dict,
+                 transforms) -> None:
+        self.images_path = Path(images_path)
+        data = self.__try_load(self.images_path)
+
+        self.labels_map = labels_map
+
+        self.images_map = data['images_map']
+        self.images = data['images']
 
     def __getitem__(self, index):
-        pass
+        target = {}
+        file_name = self.images_map[index]
+        image_path = self.images_path / file_name
+        image = Image.open(image_path).convert('RGB')
+        image_data = self.images[index]
+        transform = T.ToTensor()
+        image = transform(image)
+        labels = torch.tensor(image_data['labels'], dtype=torch.int64)
+        bboxes = torch.tensor(image_data['bboxes'], dtype=torch.float16)
+        target['bboxes'] = bboxes
+        target['labels'] = labels
+        return image, target
 
     def __len__(self):
-        pass
+        return len(self.images)
 
-    def add(self,
-            image_name: str,
-            size: Tuple,
-            bboxes: Dict) -> None:
-        image = {'id': self.__image_id,
-                 'file_name': image_name,
-                 'width': size[0],
-                 'heigth': size[1]}
-        self.data['images'].append(image)
+    def __del__(self):
+        self.save()
 
-        for class_name, bboxes in bboxes.items():
-            if class_name in self.category_map:
-                category_id = self.category_map[class_name]
-            else:
-                self.category_map[class_name] = self.__categ_id
-                category_id
-                self.__categ_id += 1
+    def add_image(self,
+                  image_name: str,
+                  bboxes: Dict[int, List]) -> None:
+        labels = list(bboxes.keys())
+        bboxes = list(bboxes.values())
+        image_data = {'bboxes': bboxes,
+                      'labels': labels}
+        id = len(self.images)
+        self.images_map[id] = image_name
+        self.images[id] = image_data
 
-            category = {'id': category_id,
-                        'name': class_name,
-                        'supercategory': "none"}
-            self.data['categories'].append(category)
+    def decode_labels(self, ids: Iterable):
+        labels = [self.labels_map[int(id)]
+                  for id in ids]
+        return labels
 
-            for bbox in bboxes:
-                area = bbox[2] * bbox[3]
-                segmentation = [bbox[0], bbox[1],
-                                bbox[0], bbox[1] + bbox[3],
-                                bbox[0] + bbox[2], bbox[1] + bbox[3],
-                                bbox[0] + bbox[2], bbox[1]]
-                # Annotation info for images bbox
-                annotation = {'id': self.__annot_id,
-                              'image_id': self.__image_id,
-                              'area': area,
-                              'bbox': bbox,
-                              'segmentation': segmentation,
-                              'iscrowd': 0,
-                              'category_id': category['id']}
-                self.data['annotations'].append(annotation)
-                self.__annot_id += 1
-        self.__image_id += 1
+    def save(self) -> None:
+        data = {'images': self.images,
+                'images_map': self.images_map}
+        file_path = self.images_path / '.json'
+        with open(file_path, 'w') as file:
+            json.dump(data, file)
+
+    def __try_load(self, path: Path) -> Dict[str, Dict]:
+        def parse_int_keys(key):
+            try:
+                res = int(key)
+            except:
+                res = key
+            return res
+
+        hook = lambda dct: {parse_int_keys(k): v for k, v in dct.items()}
+        file_path = path / '.json'
+        if file_path.exists():
+            with open(file_path, 'r') as file:
+                data = json.load(file, object_hook=hook)
+            return {'images': data['images'],
+                    'images_map': data['images_map']}
+        else:
+            return {'images': {},
+                    'images_map': {}}
