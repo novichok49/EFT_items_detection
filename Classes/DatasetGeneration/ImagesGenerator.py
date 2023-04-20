@@ -94,20 +94,30 @@ class ImagesGenerator:
                 stop = i * classes_on_image + classes_on_image
                 # Grid pack images
                 im_slice = base_imgs[start:stop]
-                grid_im, bboxes = packer.pack(im_slice)
+                grid_im, bboxes, labels = packer.pack(im_slice)
                 # Open random background
                 bg_im = Image.open(np.random.choice(bg_ims, 1)[0])
-                bg_im = bg_im.resize(size)
                 # Add grid image on background
                 gen_im, bboxes = ImagesGenerator.plot_grid_on_bg(
                     grid_image=grid_im,
                     bboxes=bboxes,
                     background_image=bg_im)
+                # Resize image and bboxes
+                x_scale = size[0] / gen_im.size[0] 
+                y_scale = size[1] / gen_im.size[1]
+                gen_im = gen_im.resize(size=size)
+                for bbox in bboxes:
+                    bbox[0] = int(bbox[0] * x_scale)
+                    bbox[1] = int(bbox[1] * y_scale)
+                    bbox[2] = int(bbox[2] * x_scale)
+                    bbox[3] = int(bbox[3] * y_scale)
+                # Save image and bboxes
                 filename = f'{im_id}.png'
                 gen_im.save(dataset_path / filename)
-                dataset.add_image(filename, bboxes)
+                dataset.add_image(filename, bboxes, labels)
                 im_id += 1
         dataset.save()
+        return gen_im, bboxes
 
     @staticmethod
     def plot_grid_on_bg(
@@ -123,13 +133,13 @@ class ImagesGenerator:
         background_image.paste(im=cutted_im,
                                box=(paste_x, paste_y),
                                mask=cutted_im.getchannel('A'))
+        #TODO Optimize
         new_bboxes = deepcopy(bboxes)
-        # Updating bbox coordinates
         for bbox in new_bboxes:
-            new_bboxes[bbox][:, 0] += paste_x
-            new_bboxes[bbox][:, 1] += paste_y
-            new_bboxes[bbox][:, 2] += paste_x
-            new_bboxes[bbox][:, 3] += paste_y
+            bbox[0] += paste_x
+            bbox[1] += paste_y
+            bbox[2] += paste_x
+            bbox[3] += paste_y
         return background_image, new_bboxes
 
     @staticmethod

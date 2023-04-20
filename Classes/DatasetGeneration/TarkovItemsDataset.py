@@ -44,9 +44,8 @@ class TarkovItemsDataset(Dataset):
 
     def add_image(self,
                   image_name: str,
-                  bboxes: Dict[int, List]) -> None:
-        labels = list(bboxes.keys())
-        bboxes = list(bboxes.values())
+                  bboxes: List,
+                  labels: List) -> None:
         image_data = {'bboxes': bboxes,
                       'labels': labels}
         id = len(self.images)
