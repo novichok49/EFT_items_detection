@@ -65,6 +65,20 @@ class TarkovItemsDataset(Dataset):
         with open(file_path, 'w') as file:
             json.dump(data, file)
 
+    def get_image(self, index):
+        target = {}
+        file_name = self.images_map[index]
+        image_path = self.images_path / file_name
+        image = Image.open(image_path).convert('RGB')
+        image_data = self.images[index]
+        transform = T.ToTensor()
+        # image = transform(image)
+        # labels = torch.tensor(image_data['labels'], dtype=torch.int64)
+        # bboxes = torch.tensor(image_data['bboxes'], dtype=torch.float16)
+        target['bboxes'] = image_data['bboxes']
+        target['labels'] = image_data['labels']
+        return image, target
+
     def __try_load(self, path: Path) -> Dict[str, Dict]:
         def parse_int_keys(key):
             try:
