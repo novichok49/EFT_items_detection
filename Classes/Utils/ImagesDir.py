@@ -126,6 +126,6 @@ class ImagesDir:
             encode_map = {}
             decode_map = {}
             last_image_id = 0
-            last_class_id = 0
+            last_class_id = 1
             im_files = []
         return encode_map, decode_map, last_image_id, last_class_id, im_files
