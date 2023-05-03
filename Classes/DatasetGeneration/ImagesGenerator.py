@@ -117,7 +117,6 @@ class ImagesGenerator:
                 dataset.add_image(filename, bboxes, labels)
                 im_id += 1
         dataset.save()
-        return gen_im, bboxes
 
     @staticmethod
     def plot_grid_on_bg(
