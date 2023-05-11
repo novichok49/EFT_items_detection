@@ -31,10 +31,10 @@ class TarkovItemsDataset(Dataset):
         transform = T.ToTensor()
         image = transform(image)
         labels = torch.tensor(image_data['labels'], dtype=torch.int64)
-        bboxes = torch.tensor(image_data['bboxes'], dtype=torch.float16)
+        bboxes = torch.tensor(image_data['boxes'], dtype=torch.float32)
         iscrowd = torch.zeros((bboxes.shape[0],), dtype=torch.int64)
         image_id = torch.tensor([index])
-        target['bboxes'] = bboxes
+        target['boxes'] = bboxes
         target['labels'] = labels
         target['area'] = (bboxes[:, 3] - bboxes[:, 1]) * (bboxes[:, 2] - bboxes[:, 0])
         target['iscrowd'] = iscrowd
@@ -51,7 +51,7 @@ class TarkovItemsDataset(Dataset):
                   image_name: str,
                   bboxes: List,
                   labels: List) -> None:
-        image_data = {'bboxes': bboxes,
+        image_data = {'boxes': bboxes,
                       'labels': labels}
         id = len(self.images)
         self.images_map[id] = image_name
@@ -76,7 +76,7 @@ class TarkovItemsDataset(Dataset):
         image_path = self.images_path / file_name
         image = Image.open(image_path).convert('RGB')
         image_data = self.images[index]
-        target['bboxes'] = image_data['bboxes']
+        target['boxes'] = image_data['boxes']
         target['labels'] = image_data['labels']
         return image, target
 
