@@ -84,6 +84,8 @@ class ImagesGenerator:
         bg_ims = [bg_im for bg_im in backgrounds_dir.iterdir()]
         packer = GridPacker(512, size[1] - 1, self._grid_size)
         labels_map = self._image_dirs[base_dir].decode_map
+        # Add background class
+        labels_map[0] = "__background__"
         dataset = TarkovItemsDataset(dataset_path, labels_map)
         for _ in range(count_base_images):
             base_imgs = self._image_dirs[base_dir][:]
