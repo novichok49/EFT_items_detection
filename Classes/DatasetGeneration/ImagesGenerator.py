@@ -6,7 +6,7 @@ from typing import List, Tuple, Dict
 from Classes.Utils import GridPacker, APIRequester, ImagesDir
 from copy import deepcopy
 from .TarkovItemsDataset import TarkovItemsDataset
-
+from tqdm import tqdm
 
 class ImagesGenerator:
     def __init__(
@@ -76,9 +76,9 @@ class ImagesGenerator:
             count_base_images: int,
             base_dir: str,
             backgrounds_dir: str | Path,
-            dataset_name: str = 'Mydataset') -> None:
+            dataset_path: str = 'Mydataset') -> None:
         im_id = 0
-        dataset_path = self._path / dataset_name
+        dataset_path = dataset_path
         dataset_path.mkdir(exist_ok=True)
         backgrounds_dir = Path(backgrounds_dir)
         bg_ims = [bg_im for bg_im in backgrounds_dir.iterdir()]
@@ -87,7 +87,7 @@ class ImagesGenerator:
         # Add background class
         labels_map[0] = "__background__"
         dataset = TarkovItemsDataset(dataset_path, labels_map)
-        for _ in range(count_base_images):
+        for _ in tqdm(range(count_base_images), desc='Generation'):
             base_imgs = self._image_dirs[base_dir][:]
             np.random.shuffle(base_imgs)
             slice_range = int(np.ceil(len(base_imgs) / classes_on_image))
