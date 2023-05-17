@@ -11,9 +11,10 @@ class TarkovItemsDataset(Dataset):
     def __init__(self,
                  images_path: str | Path,
                  labels_map: Dict = None,
-                 transforms=None) -> None:
+                 transforms=[T.ToTensor()]) -> None:
         self.images_path = Path(images_path)
         data = self.__try_load(self.images_path)
+        self.transforms = transforms
         if labels_map != None:
             self.labels_map = labels_map
         else:
@@ -28,15 +29,22 @@ class TarkovItemsDataset(Dataset):
         image_path = self.images_path / file_name
         image = Image.open(image_path).convert('RGB')
         image_data = self.images[index]
-        transform = T.ToTensor()
+        transform = T.Compose(self.transforms)
+        im_w, im_h = image.size
         image = transform(image)
+        t_w, t_h = image.shape[-1:-3:-1]
         labels = torch.tensor(image_data['labels'], dtype=torch.int64)
-        bboxes = torch.tensor(image_data['boxes'], dtype=torch.float32)
-        iscrowd = torch.zeros((bboxes.shape[0],), dtype=torch.int64)
-        image_id = torch.tensor([index])
-        target['boxes'] = bboxes
+        boxes = torch.tensor(image_data['boxes'], dtype=torch.float16)
+        iscrowd = torch.zeros((boxes.shape[0],), dtype=torch.int8)
+        image_id = torch.tensor([index], dtype=torch.int64)
+        if not(im_w == t_w and im_h == t_h):
+            w_ratio = t_w / im_w
+            h_ratio = t_h / im_h
+            boxes[:, 0::2] *= w_ratio
+            boxes[:, 1::2] *= h_ratio
+        target['boxes'] = boxes
         target['labels'] = labels
-        target['area'] = (bboxes[:, 3] - bboxes[:, 1]) * (bboxes[:, 2] - bboxes[:, 0])
+        target['area'] = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
         target['iscrowd'] = iscrowd
         target['image_id'] = image_id
         return image, target
