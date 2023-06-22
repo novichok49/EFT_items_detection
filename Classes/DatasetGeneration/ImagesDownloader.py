@@ -4,6 +4,7 @@ from io import BytesIO
 import requests
 from Classes.Utils import APIRequester, ImagesDir
 from typing import List, Dict
+from tqdm import tqdm
 
 
 class ImagesDownloader:
@@ -53,7 +54,10 @@ class ImagesDownloader:
             field_path = base_path / field
             field_path.mkdir(exist_ok=True)
             im_dirs[field] = ImagesDir(field_path)
-            for item in self._images_data:
+            for item in tqdm(self._images_data,
+                             desc=f'Downloading {field}',
+                             position=0,
+                             leave=True):
                 link = item[field]
                 response = requests.get(link)
                 if response.status_code == 200:
