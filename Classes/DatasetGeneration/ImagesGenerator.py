@@ -82,7 +82,7 @@ class ImagesGenerator:
         dataset_path.mkdir(exist_ok=True)
         backgrounds_dir = Path(backgrounds_dir)
         bg_ims = [bg_im for bg_im in backgrounds_dir.iterdir()]
-        packer = GridPacker(512, size[1] - 1, self._grid_size)
+        grid_packer = GridPacker(512, size[1] - 1, self._grid_size)
         labels_map = self._image_dirs[base_dir].decode_map
         # Add background class
         labels_map[0] = "__background__"
@@ -96,7 +96,9 @@ class ImagesGenerator:
                 stop = i * classes_on_image + classes_on_image
                 # Grid pack images
                 im_slice = base_imgs[start:stop]
-                grid_im, bboxes, labels = packer.pack(im_slice)
+                images = [image for image, _ in im_slice]
+                labels = [label for _, label in im_slice]
+                grid_im, bboxes, labels = grid_packer.pack_images(images, labels)
                 # Open random background
                 bg_im = Image.open(np.random.choice(bg_ims, 1)[0])
                 # Add grid image on background
