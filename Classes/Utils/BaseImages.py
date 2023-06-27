@@ -150,7 +150,9 @@ class BaseImages:
             `visible` -- A dictionary mapping class
             names to their visibility status.
         """
-        def fc(row): return visible[row['label']]
+
+        #If Dict does't contain label, return False visibility status.
+        fc = lambda row: visible.get(row['label'], False)
         self.data['visible'] = self.data.apply(fc, axis=1)
 
     def get_decode_map(self) -> Dict[int, str]:
