@@ -46,9 +46,8 @@ class BaseImages:
         if isinstance(image_id, slice):
             rows = self.data[image_id.start:image_id.stop:image_id.step]
             items_list = []
-            for tuple in rows.itertuples(index=True):
-                filename = tuple[0]
-                class_id = tuple[1]
+            for filename, row in rows.iterrows():
+                class_id = row['id']
                 if pd.isna(class_id):
                     class_id = None
                 image_path = self.dir_path / f"{filename}.png"
