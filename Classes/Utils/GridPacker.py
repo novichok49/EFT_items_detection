@@ -100,8 +100,8 @@ class GridPacker:
         cols_id = np.sum(cols_id)
         r = self.grid.shape[0]
         c = self.grid.shape[1]
-        row_crop = (r - rows_id) * (self.cell_size + 1)
-        col_crop = (c - cols_id) * (self.cell_size + 1)
+        row_crop = (r - rows_id) * (self.cell_size) + 1
+        col_crop = (c - cols_id) * (self.cell_size) + 1
         return image.crop((0, 0, col_crop, row_crop))
 
     def pack_images(self,
@@ -124,14 +124,18 @@ class GridPacker:
         if all([isinstance(im, Path) for im in images]):
             images = [Image.open(path) for path in images]
         for image, class_id in zip(images, labels):
+            # add aug rotate
+            
             found_position = self.find_best_position(image.size)
-            if found_position is not None:
+            if found_position:
                 x, y, w, h = found_position
                 out_image.paste(image, (x, y))
-                # bbox in format [x1, y1, x2, y2]
-                box = [x, y, x + w - 1, y + h - 1]
-                boxes.append(box)
-                out_labels.append(class_id)
+                # class_id None if class visible set to False 
+                if class_id:
+                    # bbox in format [x1, y1, x2, y2]
+                    box = [x, y, x + w - 1, y + h - 1]
+                    boxes.append(box)
+                    out_labels.append(class_id)
                 self.update_grid(found_position)
         out_image = self.cut_empty_parts(out_image)
         self.reset_grid()
