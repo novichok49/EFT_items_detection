@@ -2,7 +2,7 @@ from PIL import Image
 from pathlib import Path
 from io import BytesIO
 import requests
-from Classes.Utils import APIRequester, ImagesDir
+from Classes.Utils import APIRequester, BaseImages
 from typing import List, Dict
 from tqdm import tqdm
 
@@ -36,15 +36,15 @@ class ImagesDownloader:
         self._images_data = APIRequester.post(name='items', fields=fields)
         self._failed_download_links = {key: [] for key in self._image_fields}
 
-    def download(self, path: str | Path) -> Dict[str, ImagesDir]:
+    def download(self, path: str | Path) -> Dict[str, BaseImages]:
         """
-        Dowload images from fields to ImagesDir objects.
+        Dowload images from fields to BaseImages objects.
 
         Arguments:
             `path` -- Downloading path.
 
         Returns:
-            Dict ImagesDir objects with downloaded images.
+            Dict BaseImages objects with downloaded images.
         """
         im_dirs = {}
         base_path = Path(path)
@@ -53,7 +53,7 @@ class ImagesDownloader:
         for field in self._image_fields:
             field_path = base_path / field
             field_path.mkdir(exist_ok=True)
-            im_dirs[field] = ImagesDir(field_path)
+            im_dirs[field] = BaseImages(field_path)
             for item in tqdm(self._images_data,
                              desc=f'Downloading {field}',
                              position=0,
