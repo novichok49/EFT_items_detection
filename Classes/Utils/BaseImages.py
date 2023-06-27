@@ -4,10 +4,12 @@ from PIL import Image
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
+
 class BaseImages:
     """
     Class for managing images and their associated labels.
     """
+
     def __init__(self, path: str | Path) -> None:
         """
         Initializes a new instance of BaseImages.
@@ -26,10 +28,10 @@ class BaseImages:
     def __getitem__(self, image_id: slice | int) -> Tuple[Image.Image, int]:
         """
         Retrieves the image and label information
-        for the given image ID or slice.
+        for the given image ID or slice or class label.
 
         Arguments:
-            `image_id` -- slice or int image index.
+            `image_id` -- slice or int image index or class label.
 
         Raises:
             TypeError: If the provided `image_id` type is unsupported.
@@ -89,10 +91,16 @@ class BaseImages:
     def __del__(self) -> None:
         self.save_state()
 
+    def __len__(self) -> int:
+        """
+        Return number of visible classes.
+        """
+        return len(self.data[self.data['visible'] == True])
+
     def add_image(self,
                   image: Image.Image | Path,
                   class_name: str,
-                  visible: bool=True) -> None:
+                  visible: bool = True) -> None:
         """
         Adds an image with its associated class name and visibility.
 
@@ -120,7 +128,7 @@ class BaseImages:
                                    "visible": visible}
         self.last_image_id += 1
 
-    def create_labels(self, sep: int=0) -> None:
+    def create_labels(self, sep: int = 0) -> None:
         """
         Creates label encoding for visible images.
 
@@ -133,7 +141,6 @@ class BaseImages:
         ids = LabelEncoder().fit_transform(labels)
         self.data["id"] = pd.Series(dtype=pd.Int64Dtype(), data=None)
         self.data.loc[indexs, "id"] = ids + sep
-        
 
     def set_visible_classes(self, visible: Dict[str, bool]) -> None:
         """
@@ -143,7 +150,7 @@ class BaseImages:
             `visible` -- A dictionary mapping class
             names to their visibility status.
         """
-        fc = lambda row: visible[row['label']]
+        def fc(row): return visible[row['label']]
         self.data['visible'] = self.data.apply(fc, axis=1)
 
     def get_decode_map(self) -> Dict[int, str]:
@@ -158,8 +165,8 @@ class BaseImages:
             self.create_labels()
             self.need_encode = False
         visible = self.data["visible"] == True
-        decode_map = {k:v for k, v in zip(self.data.loc[visible, "id"],
-                                          self.data.loc[visible, "label"])}
+        decode_map = {k: v for k, v in zip(self.data.loc[visible, "id"],
+                                           self.data.loc[visible, "label"])}
         return decode_map
 
     def get_encode_map(self) -> Dict[str, int]:
@@ -174,8 +181,8 @@ class BaseImages:
             self.create_labels()
             self.need_encode = False
         visible = self.data["visible"] == True
-        encode_map = {v:k for k, v in zip(self.data.loc[visible, "id"],
-                                          self.data.loc[visible, "label"])}
+        encode_map = {v: k for k, v in zip(self.data.loc[visible, "id"],
+                                           self.data.loc[visible, "label"])}
         return encode_map
 
     def save_state(self) -> None:
@@ -194,7 +201,8 @@ class BaseImages:
         """
         label_path = self.dir_path / '.csv'
         if label_path.exists():
-            im_data = pd.read_csv(label_path, index_col=0, dtype={"image": str})
+            im_data = pd.read_csv(label_path, index_col=0,
+                                  dtype={"image": str})
         else:
             im_data = pd.DataFrame(columns=["image",
                                             "label",
