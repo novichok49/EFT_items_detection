@@ -10,16 +10,18 @@ class GridPacker:
     Class for packing images into one image
     """
 
-    def __init__(self, width: int, height: int, cell_size: int):
+    def __init__(self, width: int, height: int, cell_size: int, p_val: float=0.5):
         """
         Arguments:
             `width` -- Output image width\n
             `height` -- Output image height\n
             `cell_size` -- The size of one cell in the grid for input images\n
+            `p_val` -- Probability to rotate the image.
         """
         self.width = width
         self.height = height
         self.cell_size = cell_size - 1
+        self.p_val = p_val
         grid_shape = (height // cell_size, width // cell_size, )
         self.grid = np.zeros(grid_shape, dtype=bool)
 
@@ -103,6 +105,21 @@ class GridPacker:
         row_crop = (r - rows_id) * (self.cell_size) + 1
         col_crop = (c - cols_id) * (self.cell_size) + 1
         return image.crop((0, 0, col_crop, row_crop))
+    
+    def rotate_p_val(self, image: Image.Image):
+        """
+        Rotate image by p_val
+
+        Arguments:
+            `image` -- Image to rotate.
+
+        Returns:
+            Rotated `image` or not.
+        """
+        if np.random.uniform() < self.p_val:
+            return image.transpose(Image.ROTATE_270)
+        else:
+            return image
 
     def pack_images(self,
                     images: List[Image.Image | Path],
@@ -124,8 +141,7 @@ class GridPacker:
         if all([isinstance(im, Path) for im in images]):
             images = [Image.open(path) for path in images]
         for image, class_id in zip(images, labels):
-            # add aug rotate
-            
+            image = self.rotate_p_val(image)
             found_position = self.find_best_position(image.size)
             if found_position:
                 x, y, w, h = found_position
