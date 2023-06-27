@@ -3,7 +3,7 @@ from pathlib import Path
 from PIL import Image
 import numpy as np
 from typing import List, Tuple, Dict
-from Classes.Utils import GridPacker, APIRequester, ImagesDir
+from Classes.Utils import GridPacker, APIRequester, BaseImages
 from copy import deepcopy
 from .TarkovItemsDataset import TarkovItemsDataset
 from tqdm import tqdm
@@ -11,13 +11,13 @@ from tqdm import tqdm
 class ImagesGenerator:
     def __init__(
             self,
-            path: str | Path,
+            base_images_path: str | Path,
             class_field: str = 'normalizedName',
             grid_size: int = 64,
             seed: int = None):
-        self._path = Path(path)
-        if not self._path.exists():
-            raise FileNotFoundError(f'No such directory: {self._path}')
+        self.path = Path(base_images_path)
+        if not self.path.exists():
+            raise FileNotFoundError(f'No such directory: {self.path}')
         np.random.seed(seed)
         self._class_field = class_field
         response = APIRequester.post(
@@ -25,49 +25,12 @@ class ImagesGenerator:
             fields=[self._class_field, 'width', 'height'])
 
         self._grid_size = grid_size
-        self._image_dirs = {dir.name: ImagesDir(dir)
-                            for dir in self._path.iterdir()
-                            if dir.is_dir()}
+        self.image_dir = BaseImages(self.path)
         self._image_info = pd.json_normalize(response)\
             .set_index(self._class_field)
 
     def __getitem__(self, key: str):
-        return self._image_dirs[key]
-
-    def rescale_images_by_grid(self, dir: str) -> None:
-        """
-        Rescale images in `dir` folder and overwrite.
-
-        Arguments:
-            `dir` -- Directory name in `image_dirs` property.
-        """
-        for image_path, class_id in self._image_dirs[dir]:
-            class_name = self._image_dirs[dir].decode_id(class_id)
-            w = self._image_info.loc[class_name, 'width']
-            h = self._image_info.loc[class_name, 'height']
-            size = (w * self._grid_size, h * self._grid_size)
-            image = Image.open(image_path)
-            image = image.resize(size)
-            image.save(image_path)
-
-    def aug_rotate_images(self, dir: str) -> None:
-        """
-        Rotate all images in the `dir` 90 degrees clockwise
-        and save them in a new folder named `dir_r90`.
-
-        Arguments:
-            `dir` -- Directory name in `image_dirs` property.
-        """
-        save_dir_name = f'{dir}_r90'
-        save_dir = Path(self._path / save_dir_name)
-        save_dir.mkdir(exist_ok=True)
-        self._image_dirs[save_dir_name] = ImagesDir(save_dir)
-        for image_path, class_id in self._image_dirs[dir]:
-            class_name = self._image_dirs[dir].decode_id(class_id)
-            image = Image.open(image_path)
-            image = image.rotate(-90, expand=True)
-            self._image_dirs[save_dir_name].add_image(image, class_name)
-        self._image_dirs[save_dir_name].save_state()
+        return self.image_dir
 
     def generate_dataset(
             self,
@@ -83,12 +46,12 @@ class ImagesGenerator:
         backgrounds_dir = Path(backgrounds_dir)
         bg_ims = [bg_im for bg_im in backgrounds_dir.iterdir()]
         grid_packer = GridPacker(512, size[1] - 1, self._grid_size)
-        labels_map = self._image_dirs[base_dir].decode_map
+        labels_map = self.image_dir.get_decode_map()
         # Add background class
         labels_map[0] = "__background__"
         dataset = TarkovItemsDataset(dataset_path, labels_map)
         for _ in tqdm(range(count_base_images), desc='Generation'):
-            base_imgs = self._image_dirs[base_dir][:]
+            base_imgs = self.image_dir[:]
             np.random.shuffle(base_imgs)
             slice_range = int(np.ceil(len(base_imgs) / classes_on_image))
             for i in range(slice_range):
@@ -151,7 +114,3 @@ class ImagesGenerator:
         alpha_bbox = alpha.getbbox()
         res = image.crop(alpha_bbox)
         return res
-
-    @property
-    def image_dirs(self):
-        return list(self._image_dirs.keys())
