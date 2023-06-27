@@ -46,6 +46,8 @@ class ImagesGenerator:
         backgrounds_dir = Path(backgrounds_dir)
         bg_ims = [bg_im for bg_im in backgrounds_dir.iterdir()]
         grid_packer = GridPacker(512, size[1] - 1, self._grid_size)
+        # 0 index need for __background__ class
+        self.image_dir.create_labels(sep=1)
         labels_map = self.image_dir.get_decode_map()
         # Add background class
         labels_map[0] = "__background__"
@@ -90,15 +92,14 @@ class ImagesGenerator:
             grid_image: Image.Image,
             bboxes: Dict,
             background_image: Image.Image) -> Tuple[Image.Image, Dict]:
-        cutted_im = ImagesGenerator.cut_empty_parts(grid_image)
         paste_x = np.random.randint(
-            0, background_image.size[0] - cutted_im.size[0])
+            0, background_image.size[0] - grid_image.size[0])
         paste_y = np.random.randint(
-            0, background_image.size[1] - cutted_im.size[1])
+            0, background_image.size[1] - grid_image.size[1])
 
-        background_image.paste(im=cutted_im,
+        background_image.paste(im=grid_image,
                                box=(paste_x, paste_y),
-                               mask=cutted_im.getchannel('A'))
+                               mask=grid_image.getchannel('A'))
         #TODO Optimize
         new_bboxes = deepcopy(bboxes)
         for bbox in new_bboxes:
@@ -107,10 +108,3 @@ class ImagesGenerator:
             bbox[2] += paste_x
             bbox[3] += paste_y
         return background_image, new_bboxes
-
-    @staticmethod
-    def cut_empty_parts(image: Image.Image) -> Image.Image:
-        alpha = image.getchannel('A')
-        alpha_bbox = alpha.getbbox()
-        res = image.crop(alpha_bbox)
-        return res

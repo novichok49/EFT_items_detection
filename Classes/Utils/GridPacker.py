@@ -24,7 +24,8 @@ class GridPacker:
         self.grid = np.zeros(grid_shape, dtype=bool)
 
     def find_best_position(self, size: Tuple[int, int]) -> Tuple[int, int, int, int]:
-        """Finding the first position in the grid for an image with `size`
+        """
+        Finding the first position in the grid for an image with `size`
 
         Arguments:
             `size` -- Insetring image
@@ -44,7 +45,8 @@ class GridPacker:
         return None
 
     def check_position(self, i: int, j: int, w: int, h: int) -> bool:
-        """Checking for position `i`, `j` is it possible to insert an image
+        """
+        Checking for position `i`, `j` is it possible to insert an image
 
         Arguments:
             `i` -- Grid row index\n
@@ -65,7 +67,8 @@ class GridPacker:
         return True
 
     def update_grid(self, found_position: Tuple[int, int, int, int]) -> None:
-        """Update grid by found position
+        """
+        Update grid by found position
 
         Arguments:
             `found_position` -- Found position in format (x, y, w, h)
@@ -76,14 +79,36 @@ class GridPacker:
                 self.grid[row][col] = True
 
     def reset_grid(self):
-        """Reset `self.grid` to `False` values
+        """
+        Reset `self.grid` to `False` values
         """
         self.grid = np.full_like(self.grid, False)
+
+    def cut_empty_parts(self, image: Image.Image) -> Image.Image:
+        """
+        Cutting out empty parts from `image` using grid.
+
+        Arguments:
+            `image` -- PIL image.
+
+        Returns:
+            Croped PIL image.
+        """
+        rows_id = np.all(self.grid == False, axis=1)
+        cols_id = np.all(self.grid == False, axis=0)
+        rows_id = np.sum(rows_id)
+        cols_id = np.sum(cols_id)
+        r = self.grid.shape[0]
+        c = self.grid.shape[1]
+        row_crop = (r - rows_id) * (self.cell_size + 1)
+        col_crop = (c - cols_id) * (self.cell_size + 1)
+        return image.crop((0, 0, col_crop, row_crop))
 
     def pack_images(self,
                     images: List[Image.Image | Path],
                     labels: List[int]) -> Tuple[Image.Image, List, List]:
-        """Insert `images` on new image 
+        """
+        Insert `images` on new image 
 
         Arguments:
             `images` -- PIL images or Pathes\n
@@ -108,5 +133,6 @@ class GridPacker:
                 boxes.append(box)
                 out_labels.append(class_id)
                 self.update_grid(found_position)
+        out_image = self.cut_empty_parts(out_image)
         self.reset_grid()
         return (out_image, boxes, out_labels)
