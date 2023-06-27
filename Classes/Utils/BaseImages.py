@@ -62,6 +62,15 @@ class BaseImages:
             image_path = self.dir_path / f"{filename}.png"
             image = Image.open(image_path)
             return image, class_id
+        elif isinstance(image_id, str):
+            row = self.data[self.data['label'] == image_id]
+            filename = row.index[0]
+            class_id = row['id'][0]
+            if pd.isna(class_id):
+                class_id = None
+            image_path = self.dir_path / f"{filename}.png"
+            image = Image.open(image_path)
+            return image, class_id
         else:
             raise TypeError(f'Unsupported index type: {type(image_id)}.')
 
