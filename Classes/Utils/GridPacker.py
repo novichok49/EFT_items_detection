@@ -10,7 +10,7 @@ class GridPacker:
     Class for packing images into one image
     """
 
-    def __init__(self, width: int, height: int, cell_size: int, p_val: float=0.5):
+    def __init__(self, width: int, height: int, cell_size: int, p_val: float = 0.5):
         """
         Arguments:
             `width` -- Output image width\n
@@ -105,7 +105,7 @@ class GridPacker:
         row_crop = (r - rows_id) * (self.cell_size) + 1
         col_crop = (c - cols_id) * (self.cell_size) + 1
         return image.crop((0, 0, col_crop, row_crop))
-    
+
     def rotate_p_val(self, image: Image.Image):
         """
         Rotate image by p_val
@@ -146,7 +146,6 @@ class GridPacker:
             if found_position:
                 x, y, w, h = found_position
                 out_image.paste(image, (x, y))
-                # class_id None if class visible set to False 
                 if class_id:
                     # bbox in format [x1, y1, x2, y2]
                     box = [x, y, x + w - 1, y + h - 1]
@@ -155,4 +154,6 @@ class GridPacker:
                 self.update_grid(found_position)
         out_image = self.cut_empty_parts(out_image)
         self.reset_grid()
+        boxes = np.array(boxes, dtype=np.float64)
+        out_labels = np.array(out_labels)
         return (out_image, boxes, out_labels)
