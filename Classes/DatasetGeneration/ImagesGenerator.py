@@ -1,110 +1,179 @@
-import pandas as pd
 from pathlib import Path
 from PIL import Image
 import numpy as np
-from typing import List, Tuple, Dict
-from Classes.Utils import GridPacker, APIRequester, BaseImages
-from copy import deepcopy
-from .TarkovItemsDataset import TarkovItemsDataset
+from typing import List, Tuple
+from Classes.Utils import GridPacker, BaseImages
 from tqdm import tqdm
+from multiprocessing import Pool
+import yaml
 
 class ImagesGenerator:
+    """
+    Generate dataset from backgrounds and base images.
+    """
+
     def __init__(
             self,
             base_images_path: str | Path,
-            class_field: str = 'normalizedName',
+            backgrounds_path: str | Path,
             grid_size: int = 64,
-            seed: int = None):
-        self.path = Path(base_images_path)
-        if not self.path.exists():
-            raise FileNotFoundError(f'No such directory: {self.path}')
+            seed: int = 0) -> None:
+        """
+        Config generation params.
+
+        Arguments:
+            `base_images_path` -- Path to base images. It must be created
+            by `BaseImages` class.\n
+            `backgrounds_path` -- Path to backround images.
+
+        Keyword Arguments:
+            grid_size -- One cell cize. (default: {64})
+            seed -- Random seed. (default: {0})
+
+        Raises:
+            FileNotFoundError: If base images path or background path not found.
+        """
+        self.base_images_path = Path(base_images_path)
+        self.backgrounds_path = Path(backgrounds_path)
+        if not self.base_images_path.exists():
+            raise FileNotFoundError(f'No such base images directory:\
+                                    {self.base_images_path}')
+        elif not self.backgrounds_path.exists():
+            raise FileNotFoundError(f'No such backgrounds directory:\
+                                    {self.backgrounds_path}')
         np.random.seed(seed)
-        self._class_field = class_field
-        response = APIRequester.post(
-            name='items',
-            fields=[self._class_field, 'width', 'height'])
-
-        self._grid_size = grid_size
-        self.image_dir = BaseImages(self.path)
-        self._image_info = pd.json_normalize(response)\
-            .set_index(self._class_field)
-
-    def __getitem__(self, key: str):
-        return self.image_dir
+        self.grid_size = grid_size
+        self.image_dir = BaseImages(self.base_images_path)
 
     def generate_dataset(
             self,
-            size: Tuple[int, int],
+            images_size: Tuple[int, int],
             classes_on_image: int,
             count_base_images: int,
-            base_dir: str,
-            backgrounds_dir: str | Path,
-            dataset_path: str = 'Mydataset') -> None:
-        im_id = 0
-        dataset_path = dataset_path
+            dataset_path: str | Path,
+            n_jobs: int) -> None:
+        """
+        Generate dataset from `BaseImages` and save them.
+
+        Arguments:
+            `images_size` -- Output_image size.\n
+            `classes_on_image` -- Num samples in one image.\n
+            `count_base_images` -- Number of examples
+            of each classes in the dataset.\n
+            dataset_path -- Path to save dataset.\n
+            n_jobs -- Count subprocess for generation.
+        """
+        self.images_size = images_size
+        dataset_path = Path(dataset_path)
+        self.im_path = dataset_path.joinpath('images')
+        self.lab_path = dataset_path.joinpath('labels')
         dataset_path.mkdir(exist_ok=True)
-        backgrounds_dir = Path(backgrounds_dir)
-        bg_ims = [bg_im for bg_im in backgrounds_dir.iterdir()]
-        grid_packer = GridPacker(512, size[1] - 1, self._grid_size)
-        # 0 index need for __background__ class
+        self.im_path.mkdir(exist_ok=True)
+        self.lab_path.mkdir(exist_ok=True)
+
+        self.backgrounds = [Image.open(image)
+                            for image in self.backgrounds_path.iterdir()]
         self.image_dir.create_labels(sep=1)
-        labels_map = self.image_dir.get_decode_map()
-        # Add background class
-        labels_map[0] = "__background__"
-        dataset = TarkovItemsDataset(dataset_path, labels_map)
-        for _ in tqdm(range(count_base_images), desc='Generation'):
-            base_imgs = self.image_dir[:]
-            np.random.shuffle(base_imgs)
-            slice_range = int(np.ceil(len(base_imgs) / classes_on_image))
+        self.labels_map = self.image_dir.get_decode_map()
+        self.labels_map[0] = "__background__"
+
+        kerneldt = np.dtype([('PILImage', object), ('Label', object)])
+        self.base_images = np.array(self.image_dir[:], dtype=kerneldt)
+
+        sub_samples_ids = ImagesGenerator.get_rand_subsamples(self.base_images,
+                                                              count_base_images,
+                                                              classes_on_image)
+        with Pool(n_jobs) as pool:
+            with tqdm(total=len(sub_samples_ids), desc='Generate') as bar:
+                for _ in pool.imap(self.generate, enumerate(sub_samples_ids)):
+                    bar.update()
+        # Save class labels to YAML file
+        with open(dataset_path / 'classes.yaml', 'w') as file:
+            yaml.dump(self.labels_map, file)
+
+    def generate(self, item: Tuple[int, np.ndarray]) -> None:
+        """
+        Generate one image use sample indexs and save it to file.
+
+        Arguments:
+            item -- Tuple contains image id, indexes base images
+        """
+        image_id, image_ids = item
+        sample = self.base_images[image_ids]
+        images = [image for image, _ in sample]
+        labels = [label for _, label in sample]
+        grid_packer = GridPacker(width=512,
+                                 height=self.images_size[1] - 1,
+                                 cell_size=self.grid_size)
+        grid_image, boxes, labels = grid_packer.pack_images(images=images,
+                                                            labels=labels)
+        bg_image = np.random.choice(self.backgrounds, 1)[0]
+        gen_image, boxes = ImagesGenerator.plot_grid_on_bg(
+            grid_image=grid_image,
+            boxes=boxes,
+            background_image=bg_image
+        )
+        gen_image = gen_image.resize(size=self.images_size)
+        image_name = f'{image_id}.png'.zfill(10)
+        gen_image.save(self.im_path / image_name)
+        lab_name = f'{image_id}.txt'.zfill(10)
+        with open(self.lab_path / lab_name, 'w') as file:
+            for i in range(len(labels)):
+                file.write(f'{labels[i]} ' +
+                           ' '.join(map(str, boxes[i])) + '\n')
+
+    @staticmethod
+    def get_rand_subsamples(images: np.ndarray,
+                            count_base_images: int,
+                            classes_on_image: int,) -> List[np.ndarray]:
+        """
+        Create list of `np.ndarray` with indexes of subsamples
+
+        Arguments:
+            images -- images for subsumpling.\n
+            count_base_images -- See generate_dataset args.\n
+            classes_on_image -- See generate_dataset args.
+
+        Returns:
+            List `np.ndarray` with indexes of subsamples
+        """
+        ids = np.arange(len(images))
+        slice_range = int(np.ceil(len(ids) / classes_on_image))
+        sub_samples_ids = []
+        for _ in range(count_base_images):
+            np.random.shuffle(ids)
             for i in range(slice_range):
                 start = i * classes_on_image
                 stop = i * classes_on_image + classes_on_image
-                # Grid pack images
-                im_slice = base_imgs[start:stop]
-                images = [image for image, _ in im_slice]
-                labels = [label for _, label in im_slice]
-                grid_im, bboxes, labels = grid_packer.pack_images(images, labels)
-                # Open random background
-                bg_im = Image.open(np.random.choice(bg_ims, 1)[0])
-                # Add grid image on background
-                gen_im, bboxes = ImagesGenerator.plot_grid_on_bg(
-                    grid_image=grid_im,
-                    bboxes=bboxes,
-                    background_image=bg_im)
-                # Resize image and bboxes
-                x_scale = size[0] / gen_im.size[0] 
-                y_scale = size[1] / gen_im.size[1]
-                gen_im = gen_im.resize(size=size)
-                for bbox in bboxes:
-                    bbox[0] = int(bbox[0] * x_scale)
-                    bbox[1] = int(bbox[1] * y_scale)
-                    bbox[2] = int(bbox[2] * x_scale)
-                    bbox[3] = int(bbox[3] * y_scale)
-                # Save image and bboxes
-                filename = f'{im_id}.png'
-                gen_im.save(dataset_path / filename)
-                dataset.add_image(filename, bboxes, labels)
-                im_id += 1
-        dataset.save()
+                sub_samples_ids.append(ids[start:stop])
+        return sub_samples_ids
 
     @staticmethod
     def plot_grid_on_bg(
             grid_image: Image.Image,
-            bboxes: Dict,
-            background_image: Image.Image) -> Tuple[Image.Image, Dict]:
+            boxes: np.ndarray,
+            background_image: Image.Image) -> Tuple[Image.Image, np.ndarray]:
+        """
+        Paste generated image on background image.
+
+        Arguments:
+            grid_image -- Generated PIL image.\n
+            boxes -- array bound boxes for classes.\n
+            background_image -- Using background.
+
+        Returns:
+            Tuple with new image and normalized bound boxes.
+        """
         paste_x = np.random.randint(
             0, background_image.size[0] - grid_image.size[0])
         paste_y = np.random.randint(
             0, background_image.size[1] - grid_image.size[1])
-
         background_image.paste(im=grid_image,
                                box=(paste_x, paste_y),
                                mask=grid_image.getchannel('A'))
-        #TODO Optimize
-        new_bboxes = deepcopy(bboxes)
-        for bbox in new_bboxes:
-            bbox[0] += paste_x
-            bbox[1] += paste_y
-            bbox[2] += paste_x
-            bbox[3] += paste_y
-        return background_image, new_bboxes
+        # Changing bound boxes coordinates and normalizing them.
+        boxes[:, 0] = (paste_x + boxes[:, 0]) / background_image.size[0]
+        boxes[:, 1] = (paste_y + boxes[:, 1]) / background_image.size[1]
+        boxes[:, 2] = (paste_x + boxes[:, 2]) / background_image.size[0]
+        boxes[:, 3] = (paste_y + boxes[:, 3]) / background_image.size[1]
+        return background_image, boxes
