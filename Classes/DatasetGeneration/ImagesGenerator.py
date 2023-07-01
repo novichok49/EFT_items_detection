@@ -71,7 +71,7 @@ class ImagesGenerator:
         self.im_path.mkdir(exist_ok=True)
         self.lab_path.mkdir(exist_ok=True)
 
-        self.backgrounds = [Image.open(image)
+        self.backgrounds = [image
                             for image in self.backgrounds_path.iterdir()]
         self.image_dir.create_labels(sep=1)
         self.labels_map = self.image_dir.get_decode_map()
@@ -107,7 +107,7 @@ class ImagesGenerator:
                                  cell_size=self.grid_size)
         grid_image, boxes, labels = grid_packer.pack_images(images=images,
                                                             labels=labels)
-        bg_image = np.random.choice(self.backgrounds, 1)[0]
+        bg_image = Image.open(np.random.choice(self.backgrounds, 1)[0])
         gen_image, boxes = ImagesGenerator.plot_grid_on_bg(
             grid_image=grid_image,
             boxes=boxes,
