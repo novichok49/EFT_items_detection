@@ -85,10 +85,12 @@ class ImagesGenerator:
                                                               classes_on_image)
         with Pool(n_jobs) as pool:
             with tqdm(total=len(sub_samples_ids), desc='Generate') as bar:
+                #BUG Multiprocessing random (different process have same random)
                 for _ in pool.imap(self.generate, enumerate(sub_samples_ids)):
                     bar.update()
         # Save class labels to YAML file
         with open(dataset_path / 'classes.yaml', 'w') as file:
+            #BUG Saving in bad format
             yaml.dump(self.labels_map, file)
 
     def generate(self, item: Tuple[int, np.ndarray]) -> None:
