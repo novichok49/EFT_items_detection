@@ -73,11 +73,10 @@ class ImageSimilarity():
             List contains pairs of ids similar images in `images`.
         """
         hashes = []
+        pairs = []
         ids = [i for i in range(len(images))]
         for id, image in zip(ids, images):
             hashes.append((id, self.avg_hash(image)))
-
-        pairs = []
         for im1_id, hash1 in hashes:
             for im2_id, hash2 in hashes:
                 if self.similarity(hash1, hash2) and (im1_id != im2_id):
