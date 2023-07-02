@@ -190,7 +190,7 @@ class BaseImages:
         """
         Saves the data to csv file.
         """
-        self.data[["label", "visible"]].to_csv(self.dir_path / ".csv")
+        self.data[["label", "visible", 'old_label']].to_csv(self.dir_path / ".csv")
 
     def load_state(self) -> pd.DataFrame:
         """
