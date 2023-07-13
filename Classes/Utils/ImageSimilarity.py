@@ -1,6 +1,5 @@
 from PIL import Image
 from PIL.Image import Resampling
-from pathlib import Path
 from typing import List
 
 
@@ -61,7 +60,7 @@ class ImageSimilarity():
         else:
             return False
 
-    def similar_pairs(self, images: List[Image.Image]) -> List[tuple]:
+    def __call__(self, images: List[Image.Image]) -> List[tuple]:
         """
         Calculate similarity each to each images in `images`,
         excluding pair like (1, 2) and (2, 1) or (1, 1). 
