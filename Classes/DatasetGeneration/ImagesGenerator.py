@@ -89,9 +89,10 @@ class ImagesGenerator:
                 for _ in pool.imap(self.generate, enumerate(sub_samples_ids)):
                     bar.update()
         # Save class labels to YAML file
+        dataset_info = {'nc': len(self.labels_map),
+                        'names': [self.labels_map[s] for s in sorted(self.labels_map)]}
         with open(dataset_path / 'classes.yaml', 'w') as file:
-            #BUG Saving in bad format
-            yaml.dump(self.labels_map, file)
+            yaml.dump(dataset_info, file)
 
     def generate(self, item: Tuple[int, np.ndarray]) -> None:
         """
@@ -166,6 +167,7 @@ class ImagesGenerator:
         Returns:
             Tuple with new image and normalized bound boxes.
         """
+        #FIXME 2 param in paste_x, paste_y + 1 check 
         paste_x = np.random.randint(
             0, background_image.size[0] - grid_image.size[0])
         paste_y = np.random.randint(
