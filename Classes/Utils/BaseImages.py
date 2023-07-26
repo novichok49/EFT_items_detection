@@ -88,7 +88,8 @@ class BaseImages:
             raise StopIteration
 
     def __del__(self) -> None:
-        self.save_state()
+        # self.save_state()
+        pass
 
     def __len__(self) -> int:
         """
@@ -190,7 +191,7 @@ class BaseImages:
         """
         Saves the data to csv file.
         """
-        self.data[["label", "visible", 'old_label']].to_csv(self.dir_path / ".csv")
+        self.data[["label", "visible"]].to_csv(self.dir_path / ".csv")
 
     def load_state(self) -> pd.DataFrame:
         """
