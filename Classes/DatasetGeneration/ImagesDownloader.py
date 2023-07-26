@@ -15,7 +15,7 @@ class ImagesDownloader:
                                   "baseImageLink", "image8xLink",
                                   "inspectImageLink", "image512pxLink"]
 
-    def __init__(self, link_fields: List[str], class_field: str = 'normalizedName'):
+    def __init__(self, link_field: str, class_field: str = 'normalizedName'):
         """
         Make request to API for images links and save response.
 
@@ -27,14 +27,14 @@ class ImagesDownloader:
             Exception: Bad name field in link_fields see support fields
                 in `IMG_LINK_FIELDS`
         """
-        if not all(field in ImagesDownloader.IMG_LINK_FIELDS for field in link_fields):
-            raise Exception("Bad field in link_fields.")
-        self._image_fields = link_fields
+        if not (link_field in ImagesDownloader.IMG_LINK_FIELDS):
+            raise Exception('Bad field')
+        self._image_field = link_field
         self._class_field = class_field
         fields = [class_field]
-        fields.extend(self._image_fields)
+        fields.append(self._image_field)
         self._images_data = APIRequester.post(name='items', fields=fields)
-        self._failed_download_links = {key: [] for key in self._image_fields}
+        self._failed_download_links = []
 
     def download(self, path: str | Path) -> Dict[str, BaseImages]:
         """
@@ -46,29 +46,24 @@ class ImagesDownloader:
         Returns:
             Dict BaseImages objects with downloaded images.
         """
-        im_dirs = {}
         base_path = Path(path)
         base_path.mkdir(parents=True, exist_ok=True)
-
-        for field in self._image_fields:
-            field_path = base_path / field
-            field_path.mkdir(exist_ok=True)
-            im_dirs[field] = BaseImages(field_path)
-            for item in tqdm(self._images_data,
-                             desc=f'Downloading {field}',
-                             position=0,
-                             leave=True):
-                link = item[field]
-                response = requests.get(link)
-                if response.status_code == 200:
-                    item_class = item[self._class_field]
-                    image = Image.open(
-                        BytesIO(response.content)).convert(mode='RGBA')
-                    im_dirs[field].add_image(image, item_class)
-                else:
-                    self._failed_download_links[field].append(link)
-        im_dirs[field].save_state()
-        return im_dirs
+        self.images_dir = BaseImages(base_path)
+        for item in tqdm(self._images_data,
+                            desc=f'Downloading {self._image_field}',
+                            position=0,
+                            leave=True):
+            link = item[self._image_field]
+            response = requests.get(link)
+            if response.status_code == 200:
+                item_class = item[self._class_field]
+                image = Image.open(
+                    BytesIO(response.content)).convert(mode='RGBA')
+                self.images_dir.add_image(image, item_class)
+            else:
+                self._failed_download_links.append(link)
+        self.images_dir.save_state()
+        return self.images_dir
 
     @property
     def failed_download_links(self):
