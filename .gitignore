@@ -1,5 +1,7 @@
-**.ipynb
 **.env
-**.json
-/test
-/Mydoc
+/ExternalLibs
+/Model
+/TEST
+__pycache__
+tests*
+.vscode
